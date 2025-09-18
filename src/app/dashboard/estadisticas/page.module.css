@@ -1,0 +1,99 @@
+:root{
+  --text:#111; --muted:#6f6f6f; --ring:#eaeaea;
+  --card:#fff; --radius:16px;
+}
+
+/* contenedor general */
+.wrap{ display:flex; flex-direction:column; gap:14px; }
+
+/* header */
+.header{
+  background:#fff;
+  border:1px solid var(--ring);
+  border-radius:14px;
+  padding:14px 16px;
+}
+.hi{ margin:0; font-size:18px; font-weight:800; color:var(--text); }
+.sub{ margin:4px 0 0; color:#8b8b8b; font-size:13px; }
+
+/* KPIs */
+.kpiGrid{
+  display:grid; gap:10px;
+  grid-template-columns: repeat(12, 1fr);
+}
+.kpiCard{
+  grid-column: span 3;
+  background:#fff;
+  border:1px solid var(--ring);
+  border-radius:14px;
+  padding:14px;
+}
+.kpiTitle{ margin:0 0 8px; font-size:12px; color:#777; letter-spacing:.2px; text-transform:uppercase; }
+.kpiRow{ display:flex; align-items:center; gap:10px; }
+.kpiValue{ font-size:26px; font-weight:800; color:#111; }
+.delta{ font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid #e6f4ea; }
+.up{ color:#0a8a3c; background:#ecfdf3; border-color:#c7f0d8; }
+.down{ color:#b42318; background:#fee4e2; border-color:#fecdca; }
+
+/* grid 8/4 */
+.grid{
+  display:grid; gap:10px;
+  grid-template-columns: repeat(12, 1fr);
+}
+.span8{ grid-column: span 8; }
+.span4{ grid-column: span 4; }
+
+/* card base */
+.card{
+  background:var(--card);
+  border:1px solid var(--ring);
+  border-radius:14px;
+  padding:12px;
+}
+.cardHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.cardHeadRow{ display:flex; align-items:center; justify-content:space-between; }
+.cardTitle{ margin:0; font-size:14px; font-weight:800; color:#111; }
+.cardSub{ margin:4px 0 0; color:#8b8b8b; font-size:12px; }
+
+/* segmented controls + PDF */
+.segmented{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.segBtn{
+  padding:8px 10px; font-size:12px; border-radius:10px; border:1px solid var(--ring);
+  background:#fff; cursor:pointer;
+}
+.segActive{ background:#111; color:#fff; border-color:#111; }
+.pdfBtn{ padding:8px 10px; font-size:12px; border-radius:10px; border:1px solid var(--ring); background:#f7f7f7; }
+
+/* charts wrappers */
+.chartBox{ margin-top:6px; }
+.chartBoxTall{ margin-top:6px; }
+
+/* lista rendimiento diario */
+.list{ list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.listItem{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px; border-radius:10px; background:#fff; }
+.person{ display:flex; align-items:center; gap:10px; }
+.avatar{ width:28px; height:28px; border-radius:999px; display:grid; place-items:center; color:#fff; font-weight:700; }
+.personText{ display:flex; flex-direction:column; }
+.personText small{ color:#8b8b8b; font-size:12px; }
+.count{ font-weight:800; color:#1a1a1a; }
+
+/* ranking barras horizontales */
+.badge{
+  font-size:11px; padding:6px 8px; border:1px solid var(--ring); border-radius:999px; background:#fff;
+}
+.rankList{ display:flex; flex-direction:column; gap:12px; margin-top:10px; }
+.rankRow{ display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:10px; }
+.rankName{ font-weight:700; color:#222; }
+.rankBar{ height:10px; background:#f2f2f2; border-radius:999px; overflow:hidden; }
+.rankBar b{ display:block; height:100%; background:#6b512e; }
+.rankVal{ font-weight:700; color:#222; font-variant-numeric: tabular-nums; }
+
+/* responsive */
+@media (max-width:1000px){
+  .kpiCard{ grid-column: span 6; }
+  .span8{ grid-column: span 12; }
+  .span4{ grid-column: span 12; }
+}
+@media (max-width:600px){
+  .kpiCard{ grid-column: span 12; }
+}

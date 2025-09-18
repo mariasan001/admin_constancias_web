@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap');
+body{
+  font-family: "Cabin", sans-serif;
+}
+:root{
+  --bg-cream:#FFF8EE;     /* fondo página */
+  --surface:#ffffff;      /* tarjeta principal */
+  --ring:#FFEBD2;         /* borde suave */
+  --radius:18px;
+  --gap:10px;             /* margen exterior de la surface (pon 0 si lo quieres al ras) */
+}
+
+html, body { height:100%; margin:0; }
+body { overflow:hidden; }                 /* evita scroll global inesperado */
+
+.shell{
+  display:grid;
+  grid-template-columns: 80px 1fr;        /* sidebar fijo + contenido */
+  height:100dvh;
+  background:var(--bg-cream);
+  position:relative;                      /* crea contexto de stacking */
+  z-index:auto;
+}
+
+.main{
+  height:100%;
+  padding:var(--gap);                     /* controla el “mini-margen” exterior */
+  display:flex;
+  position:relative;
+  z-index:1;                              /* debajo del sidebar */
+}
+
+.surface{
+  flex:1;
+  height:100%;
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:0 10px 30px rgba(0,0,0,.06);
+  overflow:auto;                          /* ← único scroll permitido */
+  padding:20px;
+  position:relative;
+  z-index:1;                              /* debajo del sidebar */
+}
+
+@media (max-width:720px){
+  .shell{ grid-template-columns:66px 1fr; }
+  .surface{ border-radius:16px; padding:14px; }
+}

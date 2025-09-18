@@ -1,0 +1,289 @@
+@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap');
+
+:root {
+  --brand: #9f2141; /* vino institucional */
+  --brand-700: #7d1833;
+  --gold: #bc945a;
+  --text: #0a0a0a;
+  --muted: #6b6b6b;
+  --bg: #f4f4f4;
+  --radius: 20px;
+}
+
+/* ===== Página con margen proporcional ===== */
+.page {
+  min-height: 100dvh;
+  background: var(--bg);
+  padding: clamp(16px, 3vh, 40px) clamp(16px, 3vw, 40px);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Tarjeta del layout ===== */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  min-height: min(84vh, 760px);
+  display: flex;
+  gap: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  background: #fff;
+}
+
+/* ===== Panel izquierdo con imagen ===== */
+.leftPanel {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 300px;
+}
+.leftPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/img/fondo.png") center/cover no-repeat;
+}
+.leftPanel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
+}
+.leftContent {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 24px;
+  color: #fff;
+  max-width: 560px;
+  z-index: 1;
+}
+.leftContent h1 {
+  font-size: clamp(24px, 3.2vw, 34px);
+  font-weight: 800;
+  line-height: 1.65;
+  letter-spacing: 0.2px;
+}
+.leftContent p {
+  margin-top: 10px;
+  font-size: clamp(13px, 1.6vw, 15px);
+  line-height: 1.55;
+  opacity: 0.95;
+  
+}
+
+/* ===== Panel derecho ===== */
+.rightPanel {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+}
+.formWrap {
+  width: 100%;
+  max-width: 520px; /* <-- limita el largo de inputs */
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.logoBox {
+  text-align: right;
+  margin-bottom: 2rem;
+}
+.logoBox img {
+  max-height: 56px;
+  height: auto;
+  margin-bottom: 70px;
+  width: auto;
+}
+.title {
+  font-family: "Cabin", sans-serif !important;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+.subtitle {
+  font-size: 0.9rem;
+  font-weight: 400 !important;
+  color: #6e6e6e;
+  margin: 0 0 2rem;
+  max-width: 520px;
+}
+
+/* ===== Formulario ===== */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Wrapper con borde + focus-within para mejor UX */
+.inputWrapper {
+  position: relative;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  background: #fafafa;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.inputWrapper:focus-within {
+  border-color: var(--brand);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(159, 33, 65, 0.12);
+}
+
+/* Input “limpio” dentro del wrapper */
+.inputWrapper input {
+  width: 100%;
+  height: 44px;
+  padding: 0 44px 0 42px; /* izq icono, der toggle */
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: var(--text);
+  font-size: 14px;
+}
+.inputWrapper input::placeholder {
+  color: #9a9a9a;
+}
+
+/* Icono izquierdo (lucide) */
+.iconLeft {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Botón/ícono derecho (eye/eye-off) */
+.iconBtn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.iconBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.iconBtn:active {
+  transform: translateY(-50%) scale(0.98);
+}
+.iconBtn svg {
+  width: 20px;
+  height: 20px;
+  color: #6b6b6b;
+}
+
+/* Autorrelleno (Chrome) – quita el azul */
+.inputWrapper input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Acciones */
+.actions {
+  margin-top: 6px;
+}
+
+/* Botón principal con degradado vino */
+.loginBtn {
+  width: 100%;
+  background: linear-gradient(135deg, #a22648 0%, #7d1833 100%);
+  color: #fff;
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(125, 24, 51, 0.18);
+  transition: filter 0.15s ease, transform 0.02s ease, box-shadow 0.2s;
+}
+.loginBtn:hover {
+  filter: brightness(0.98);
+  box-shadow: 0 8px 18px rgba(125, 24, 51, 0.22);
+}
+.loginBtn:active {
+  transform: translateY(1px);
+}
+
+/* Por si existía el botón de “solicitar acceso” */
+.requestBtn {
+  display: none;
+}
+
+/* ===== Responsivo ===== */
+@media (max-width: 1200px) {
+  .container {
+    min-height: auto;
+  }
+}
+@media (max-width: 1024px) {
+  .container {
+    flex-direction: column;
+  }
+  .leftPanel {
+    height: 240px;
+  }
+  .formWrap {
+    padding: 2rem;
+    max-width: 560px;
+  } /* en tablet permite poquito más */
+}
+@media (max-width: 520px) {
+  .page {
+    padding: 12px;
+  }
+  .formWrap {
+    padding: 1.25rem;
+    max-width: 100%;
+  }
+  .leftContent {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+  .logoBox {
+    margin-bottom: 1.25rem;
+  }
+}
+.error{
+  margin-top: 4px;
+  color: #b42318;
+  background: #fee4e2;
+  border: 1px solid #fecdca;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.loginBtn[disabled]{
+  opacity:.7; cursor:not-allowed;
+}
