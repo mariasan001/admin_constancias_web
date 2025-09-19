@@ -10,10 +10,11 @@ import {
   listTramiteTypes,
 } from "@/features/tramites/tramite.service";
 import type { TramiteFull } from "@/features/tramites/tramite.model";
+import React from "react";
 
 type TramiteType = {
   id: number;
-  descArea: string; // 👈 importante, que coincida con la API
+  descArea: string; // 👈 coincide con la API
 };
 
 export default function AsignacionesPage() {
@@ -120,8 +121,8 @@ export default function AsignacionesPage() {
               </tr>
             ) : rows.length ? (
               rows.map((t) => (
-                <>
-                  <tr key={t.id}>
+                <React.Fragment key={t.id}>
+                  <tr>
                     {/* 🔗 Folio clickable */}
                     <td
                       className={styles.clickable}
@@ -235,7 +236,7 @@ export default function AsignacionesPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))
             ) : (
               <tr>
