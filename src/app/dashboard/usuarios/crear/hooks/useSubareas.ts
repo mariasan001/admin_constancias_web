@@ -3,7 +3,8 @@ import { listSubareas, getSubareaById } from "@/features/catalogs/service";
 import type { SubArea } from "@/features/catalogs/models";
 
 export function useSubareas(defaultSub?: number) {
-  const [subWorkUnitId, setSubWorkUnitId] = useState<number | "">(defaultSub || "");
+  // 👇 ahora es number | undefined (más limpio que usar "")
+  const [subWorkUnitId, setSubWorkUnitId] = useState<number | undefined>(defaultSub);
   const [subareas, setSubareas] = useState<SubArea[]>([]);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -20,6 +21,7 @@ export function useSubareas(defaultSub?: number) {
 
   useEffect(() => { fetch(); }, [query, page]);
 
+  // asegurar que el defaultSub esté en la lista
   useEffect(() => {
     if (!defaultSub) return;
     (async () => {

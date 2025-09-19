@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createAnalyst } from "@/features/analysts/service";
 import type { CreateAnalystPayload } from "@/features/analysts/models";
 import { Loader2, UserPlus } from "lucide-react";
@@ -7,12 +7,25 @@ import styles from "../crear.module.css";
 
 export default function AnalystForm({ subWorkUnitId, onCreated }: { subWorkUnitId: number; onCreated: () => void }) {
   const [form, setForm] = useState<CreateAnalystPayload>({
-    userId: "", password: "", firstName: "", secondName: "",
-    name: "", email: "", phone: "", subWorkUnitId
+    userId: "",
+    password: "",
+    firstName: "",
+    secondName: "",
+    name: "",
+    email: "",
+    phone: "",
+    subWorkUnitId: subWorkUnitId, // 👈 importante
   });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string|null>(null);
   const [err, setErr] = useState<string|null>(null);
+
+  // 👇 sincronizar siempre que cambie el subWorkUnitId
+  useEffect(() => {
+    if (subWorkUnitId) {
+      setForm(f => ({ ...f, subWorkUnitId }));
+    }
+  }, [subWorkUnitId]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +34,11 @@ export default function AnalystForm({ subWorkUnitId, onCreated }: { subWorkUnitI
       setLoading(true);
       await createAnalyst(form);
       setMsg("Analista creado correctamente.");
-      setForm(f => ({ ...f, userId:"", password:"", firstName:"", secondName:"", name:"", email:"", phone:"" }));
+      setForm(f => ({
+        ...f,
+        userId:"", password:"", firstName:"", secondName:"",
+        name:"", email:"", phone:"", subWorkUnitId: subWorkUnitId
+      }));
       onCreated();
     } catch (e: any) {
       setErr(e?.response?.data?.message ?? "No se pudo crear el usuario.");

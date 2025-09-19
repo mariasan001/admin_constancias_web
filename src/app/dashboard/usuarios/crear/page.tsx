@@ -15,21 +15,23 @@ import PasswordModal from "./components/PasswordModal";
 
 export default function CrearUsuariosPage() {
   const { user } = useAuthContext();
-  const defaultSub = (user as any)?.subWorkUnitId || (user as any)?.sub_work_unit_id || "";
+
+  // 👇 Tomar el ID de la subárea del líder logueado
+  const defaultSub = user?.subWorkUnit?.id;
 
   // ----- SUBÁREAS -----
   const {
     subareas, subWorkUnitId, setSubWorkUnitId,
     query, setQuery, page, setPage, totalPages, total, fetch
-  } = useSubareas(Number(defaultSub) || undefined);
+  } = useSubareas(defaultSub);
 
   // ----- ANALYSTS -----
-const {
-  rows, totalUsers, loading,
-  size, setSize,
-  fetchList, toggleActive,
-  edit, setEdit, pwdFor, setPwdFor, pwdNew, setPwdNew, changePwd
-} = useAnalysts(subWorkUnitId || undefined);
+  const {
+    rows, totalUsers, loading,
+    size, setSize,
+    fetchList, toggleActive,
+    edit, setEdit, pwdFor, setPwdFor, pwdNew, setPwdNew, changePwd
+  } = useAnalysts(subWorkUnitId);
 
   return (
     <section className={styles.wrap}>
@@ -41,7 +43,7 @@ const {
       <div className={styles.grid}>
         {/* Alta */}
         <article className={styles.card}>
-          <AnalystForm subWorkUnitId={Number(subWorkUnitId)} onCreated={fetchList}/>
+          <AnalystForm subWorkUnitId={subWorkUnitId ?? 0} onCreated={fetchList}/>
         </article>
 
         {/* Listado */}
