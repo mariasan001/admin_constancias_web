@@ -1,3 +1,5 @@
+import api from "@/lib/apis";
+
 // Resumen de un trámite (lo que se usa en tablas)
 export type Tramite = {
   id: number;

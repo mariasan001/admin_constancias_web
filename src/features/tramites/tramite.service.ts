@@ -22,7 +22,11 @@ export async function getTramiteByFolio(folio: string): Promise<TramiteFull> {
 }
 
 // 🔄 Cambio de tipo de trámite
-export async function changeTramiteType(folio: string, newTypeId: number, comment: string) {
+export async function changeTramiteType(
+  folio: string,
+  newTypeId: number,
+  comment: string
+) {
   const { data } = await api.patch(
     `/api/tramites/type/${encodeURIComponent(folio)}/change-type`,
     { newTypeId, comment }
@@ -30,8 +34,27 @@ export async function changeTramiteType(folio: string, newTypeId: number, commen
   return data;
 }
 
-// tramite.service.ts
+// 📋 Catálogo de tipos de trámite
 export async function listTramiteTypes(): Promise<TramiteType[]> {
   const { data } = await api.get("/api/catalogs", { params: { size: 100 } });
   return data?.content ?? [];
+}
+
+// 🔄 Cambio de estatus
+export async function changeTramiteStatus(
+  folio: string,
+  toStatusId: number,
+  actorUserId: string,
+  actorUserName: string
+) {
+  const comment = `Cambio hecho por ${actorUserName}`;
+  const { data } = await api.patch(
+    `/api/tramites/${encodeURIComponent(folio)}/status`,
+    {
+      toStatusId,
+      actorUserId,
+      comment,
+    }
+  );
+  return data;
 }

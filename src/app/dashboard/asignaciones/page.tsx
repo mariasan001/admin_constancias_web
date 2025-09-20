@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import {
   getTramiteByFolio,
   changeTramiteType,
+  changeTramiteStatus,
   listTramiteTypes,
 } from "@/features/tramites/tramite.service";
 import type { TramiteFull } from "@/features/tramites/tramite.model";
@@ -14,7 +15,7 @@ import React from "react";
 
 type TramiteType = {
   id: number;
-  descArea: string; // 👈 coincide con la API
+  descArea: string;
 };
 
 export default function AsignacionesPage() {
@@ -40,9 +41,10 @@ export default function AsignacionesPage() {
   const [openFolio, setOpenFolio] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  // Estado de tipos de trámite
+  // Estado de edición
   const [tramiteTypes, setTramiteTypes] = useState<TramiteType[]>([]);
   const [editingFolio, setEditingFolio] = useState<string | null>(null);
+  const [editingStatusFolio, setEditingStatusFolio] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTypes = async () => {
@@ -78,10 +80,27 @@ export default function AsignacionesPage() {
     try {
       await changeTramiteType(folio, newTypeId, "Cambio de tipo desde la tabla");
       setEditingFolio(null);
-      fetchList(); // refresca la tabla
+      fetchList();
     } catch (e) {
       console.error("Error cambiando tipo:", e);
       alert("No se pudo cambiar el tipo");
+    }
+  };
+
+  const handleStatusChange = async (folio: string, newStatusId: number) => {
+    if (!user) return;
+    try {
+      await changeTramiteStatus(
+        folio,
+        newStatusId,
+        user.userId, // 👈 ID del usuario
+        user.name           // 👈 Nombre del usuario
+      );
+      setEditingStatusFolio(null);
+      fetchList();
+    } catch (e) {
+      console.error("Error cambiando estatus:", e);
+      alert("No se pudo cambiar el estatus");
     }
   };
 
@@ -157,7 +176,29 @@ export default function AsignacionesPage() {
                       )}
                     </td>
 
-                    <td>{t.statusDesc}</td>
+                    {/* 🔽 Estatus editable */}
+                    <td>
+                      {editingStatusFolio === t.folio ? (
+                        <select
+                          value={t.statusId}
+                          onChange={(e) =>
+                            handleStatusChange(t.folio, Number(e.target.value))
+                          }
+                          onBlur={() => setEditingStatusFolio(null)}
+                        >
+                          <option value={1}>RECIBIDO</option>
+                          <option value={2}>ASIGNADO</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={styles.clickable}
+                          onClick={() => setEditingStatusFolio(t.folio)}
+                        >
+                          {t.statusDesc}
+                        </span>
+                      )}
+                    </td>
+
                     <td>{t.requesterId}</td>
                     <td>{new Date(t.createdAt).toLocaleString()}</td>
                     <td>{t.docsCount}</td>
@@ -192,45 +233,6 @@ export default function AsignacionesPage() {
                                 selected.history.createdAt
                               ).toLocaleString()}
                             </p>
-
-                            <h5>Historial</h5>
-                            {selected.history.history?.length ? (
-                              <ul>
-                                {selected.history.history.map((h, i) => (
-                                  <li key={i}>
-                                    {h.fromStatus} → {h.toStatus} | {h.comment}
-                                    <br />
-                                    <small>
-                                      Por {h.changedBy} el{" "}
-                                      {new Date(h.changedAt).toLocaleString()}
-                                    </small>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p>Sin historial</p>
-                            )}
-
-                            <h5>Documentos</h5>
-                            {selected.docs?.length ? (
-                              <ul>
-                                {selected.docs.map((d) => (
-                                  <li key={d.id}>
-                                    {d.docTypeDesc} –{" "}
-                                    <a
-                                      href={d.downloadUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {d.originalName}
-                                    </a>{" "}
-                                    ({(d.sizeBytes / 1024).toFixed(1)} KB)
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p>Sin documentos</p>
-                            )}
                           </div>
                         )}
                       </td>
