@@ -19,10 +19,8 @@ type Item = {
 
 const ITEMS: Item[] = [
   { id:'estadisticas', label:'Estadísticas', href:'/dashboard/estadisticas', icon:BarChart3, roles:['ADMIN','LIDER'] },
-  { id:'bitacora',     label:'Bitácora',     href:'/dashboard/bitacora',     icon:NotebookPen, roles:['ADMIN','LIDER','ANALISTA','VENTANILLA'] },
   { id:'crear-usuarios', label:'Crear usuarios', href:'/dashboard/usuarios/crear', icon:UserPlus, roles:['LIDER',] },
   { id:'asignaciones',   label:'Asignaciones',   href:'/dashboard/asignaciones',   icon:ClipboardList, roles:['LIDER','ADMIN','ANALISTA'] },
-  { id:'seguimientos',   label:'Seguimientos',   href:'/dashboard/seguimientos', icon:ListChecks, roles:['ANALISTA','USER'] },
   { id:'altas-entregas', label:'Altas y entregas', href:'/dashboard/altas-entregas', icon:FileCheck2, roles:['VENTANILLA'] },
   { id:'altas',          label:'Altas',        href:'/dashboard/altas',      icon:FilePlus2, roles:['USER'] },
   { id:'seguimiento',    label:'Seguimiento',  href:'/dashboard/seguimiento', icon:ListChecks, roles:['USER'] },
