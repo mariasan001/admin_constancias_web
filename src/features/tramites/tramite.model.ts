@@ -1,6 +1,6 @@
-import api from "@/lib/apis";
+// src/features/tramites/tramite.model.ts
 
-// Resumen de un trámite (lo que se usa en tablas)
+// ===== Listado =====
 export type Tramite = {
   id: number;
   folio: string;
@@ -8,15 +8,25 @@ export type Tramite = {
   tramiteTypeDesc: string;
   statusId: number;
   statusDesc: string;
+
   requesterId: string;
   requesterName?: string | null;
+
   createdAt: string;
+
+  // Asignación
   assignedTo?: string | null;
   assignedToName?: string | null;
   assignedAt?: string | null;
+
+  // Quién asignó
+  assignedBy?: string | null;
+  assignedByName?: string | null;
+
   docsCount: number;
 };
-// Página de trámites
+
+// Página de resultados
 export type TramitePage = {
   content: Tramite[];
   totalElements: number;
@@ -25,8 +35,7 @@ export type TramitePage = {
   size: number;
 };
 
-
-// tramite.model.ts
+// ===== Detalle =====
 export interface TramiteHistoryItem {
   fromStatus: string;
   toStatus: string;
@@ -60,8 +69,16 @@ export interface TramiteFull {
   history: TramiteDetail;
   docs: TramiteDoc[];
 }
-// tramite.model.ts
-export interface TramiteType {
+
+// Catálogo de tipos
+export type TramiteType = {
   id: number;
-  descArea: string; // ⚡ aquí, no "description"
-}
+  descArea: string;
+};
+
+// Analistas (para el selector)
+export type Analyst = {
+  userId: string;
+  name: string;
+  subWorkUnitId: number;
+};
