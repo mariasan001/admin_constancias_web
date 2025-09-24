@@ -1,200 +1,440 @@
-/* src/app/(tu-ruta)/asignaciones/asignaciones.module.css */
-/* ====== PALETA INSTITUCIONAL (café, vino, negro, blanco) ====== */
-:root{
-  --coffee:#6b4f3a;        /* café principal */
-  --coffee-700:#5b4231;
-  --coffee-50:#f2ebe5;     /* café claro para fondos */
-  --coffee-25:#f8f4f1;
-
-  --burgundy:#8a1538;      /* vino / burdeos (acción primaria) */
-  --burgundy-600:#731031;
-
-  --black:#111213;
-  --white:#ffffff;
-
-  --text:#1f2429;          /* texto base */
-  --muted:#6b7280;         /* secundarios */
-  --border:#e7e2de;        /* borde sutil */
-  --ring:rgba(106,79,58,.28); /* focus ring accesible */
+/* ====== Tokens (Tema CLARO) ====== */
+:root {
+  --bg: #f7f8fa;
+  --card: #fff;
+  --text: #0a0a0a;
+  --muted: #667085;
+  --ring: rgba(16, 24, 40, 0.08);
+  --line: rgba(16, 24, 40, 0.08);
+  --brand: #9f2141;
+  --brand-200: #b54562;
+  --ok: #16a34a;
+  --danger: #dc2626;
 }
 
-/* ====== LAYOUT & HEADER ====== */
-.wrap{
-  padding:24px clamp(16px,4vw,32px);
-  min-height:100dvh;
-  color:var(--text);
-  background:
-    radial-gradient(600px 280px at 5% -10%, var(--coffee-25), transparent 60%),
-    radial-gradient(600px 280px at 95% -10%, #faf7f4, transparent 60%),
-    var(--white);
-}
-.header{
-  display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end;
-  margin-bottom:16px;
-}
-.title{font-size:28px; font-weight:800; color:var(--black); letter-spacing:.2px;}
-.subtitle{color:var(--muted); margin-top:4px}
-
-/* ====== TOOLBAR ====== */
-.toolbar{display:flex; gap:12px; align-items:center; justify-content:end;}
-.controls{display:flex; gap:10px}
-.search{
-  display:flex; align-items:center; gap:8px;
-  background:var(--coffee-25);
-  border:1px solid var(--border);
-  border-radius:12px; padding:8px 12px; min-width:min(360px,50vw);
-  transition:box-shadow .15s ease,border .15s ease,background .15s ease;
-}
-.search:focus-within{box-shadow:0 0 0 4px var(--ring); border-color:var(--coffee)}
-.search input{all:unset; color:var(--text); width:100%}
-.select{
-  display:inline-flex; gap:8px; align-items:center;
-  color:var(--muted);
-  background:var(--coffee-25);
-  border:1px solid var(--border);
-  border-radius:12px; padding:8px 10px;
-}
-.select select{background:transparent; color:var(--text); border:none; outline:none}
-
-/* ====== CARD ====== */
-.card{
-  background:var(--white);
-  border:1px solid var(--border);
-  border-radius:14px;
-  box-shadow:0 10px 28px rgba(17,18,19,.06);
-  padding:10px 10px 12px;
-}
-
-/* ====== TABLA ====== */
-.tableWrap{overflow:auto; border-radius:12px; border:1px solid var(--border)}
-.table{
-  width:100%; border-collapse:separate; border-spacing:0; min-width:980px;
-}
-.table thead th{
-  position:sticky; top:0; z-index:2;
-  background:#faf8f6;
-  text-align:left; font-weight:700; color:#0f172a;
-  padding:12px 14px; border-bottom:1px solid var(--border);
-}
-.table tbody tr{transition:background .12s ease;}
-.table tbody tr:hover{background:#fbfbfb}
-.table td{
-  padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top;
-}
-
-/* ====== INTERACCIONES GENERALES ====== */
-.clickable{cursor:pointer}
-.clickable:hover{text-decoration:underline; color:var(--coffee-700)}
-
-.input{
-  background:#fbfaf8; border:1px solid var(--border); color:var(--text);
-  border-radius:10px; padding:7px 9px; outline:none;
-  transition:box-shadow .15s ease,border .15s ease;
-}
-.input:focus{box-shadow:0 0 0 4px var(--ring); border-color:var(--coffee)}
-
-.linkBtn{
-  background:transparent; border:1px solid var(--border);
-  color:var(--burgundy); cursor:pointer; padding:4px 10px; border-radius:10px;
-  margin-left:8px; font-weight:600;
-  transition:background .15s ease,border .15s ease,transform .05s ease;
-}
-.linkBtn:hover{background:#fff1f4; border-color:#f3d0da}
-.linkBtn:active{transform:translateY(1px)}
-.linkBtn:disabled{opacity:.5; cursor:default}
-
-/* ====== BADGES (ESTATUS) ====== */
-.badge{
-  display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px;
-  font-weight:700; font-size:12px; border:1px solid var(--border);
-  background:#f6f6f6; color:#0b1320;
-}
-.badgeAssigned{background:#edf8f1; color:#155e2f; border-color:#d5f0df} /* ASIGNADO */
-.badgeReceived{background:#fff6ed; color:#7a3e0a; border-color:#ffe3c4} /* RECIBIDO */
-
-.badgeBtn{
-  all:unset; cursor:pointer; padding:4px 10px; border-radius:999px;
-  font-weight:800; font-size:12px; border:1px solid var(--border);
-}
-.badgeBtn:hover{background:#fff1f4; border-color:#f3d0da}
-
-/* ====== TEXTO & UTILS ====== */
-.text{color:var(--text)}
-.textCenter{text-align:center}
-.muted{color:var(--muted); display:block; margin-top:2px}
-
-/* ====== DETALLE EXPANDIBLE ====== */
-.detailRow td{background:var(--coffee-50)}
-.detailBox{border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--white)}
-.detailTitle{margin:0 0 10px}
-.detailGrid{display:grid; grid-template-columns:repeat(2,minmax(220px,1fr)); gap:8px 20px; margin-bottom:12px}
-.detailColumns{display:grid; grid-template-columns:1fr 1fr; gap:16px}
-.timeline{list-style:none; padding:0; margin:0}
-.timeline li{display:grid; grid-template-columns:10px 1fr; gap:10px; margin-bottom:10px}
-.timelineDot{width:8px; height:8px; border-radius:999px; background:var(--coffee)}
-.timelineLine{font-weight:600}
-.docs{list-style:none; padding:0; margin:0}
-.docs li{margin-bottom:8px}
-.docType{font-weight:700; margin-right:6px}
-.docLink{color:var(--burgundy); text-decoration:underline}
-
-/* ====== ESTADOS VACÍOS/CARGA ====== */
-.loadingRow,.empty{text-align:center; color:var(--muted); padding:22px}
-
-/* ====== PAGINACIÓN ====== */
-.pagination{display:flex; align-items:center; justify-content:space-between; padding:10px 6px 2px}
-.pager{display:flex; gap:8px; align-items:center}
-.pageBtn{
-  background:#fbfaf8; color:var(--text); border:1px solid var(--border);
-  border-radius:10px; padding:6px 10px; cursor:pointer;
-}
-.pageBtn:disabled{opacity:.5; cursor:default}
-.pageNumber{
-  background:#fff1f4; border:1px solid #f3d0da; color:var(--burgundy);
-  padding:4px 10px; border-radius:999px; font-weight:700;
-}
-
-/* ====== RESPONSIVE ====== */
-@media (max-width: 900px){
-  .detailGrid{grid-template-columns:1fr}
-  .detailColumns{grid-template-columns:1fr}
-  .search{min-width:unset}
-}
-
-/* (Opcional) DARK MODE – activa si lo necesitas
-@media (prefers-color-scheme: dark){
-  :root{
-    --text:#eae8e6; --muted:#b8b6b4; --border:#3b332e;
-    --coffee-50:#241b15; --coffee-25:#2c221c; --white:#181412; --black:#f3f2f1;
-    --ring:rgba(138,21,56,.35);
-  }
-  .table thead th{background:#1f1813; border-bottom:1px solid var(--border)}
-  .table tbody tr:hover{background:#221a14}
-  .card{box-shadow:none}
-  .linkBtn{border-color:#4a3e36}
-  .badge{background:#2b221c; border-color:#3b332e}
-}
-*/
-
-
-:global(body) {
-  overflow-y: auto;             /* ✅ permite scroll vertical */
-  overscroll-behavior-y: auto;
-}
-
-/* Si tu layout principal usa un contenedor <main> o .appContent */
-:global(main), :global(.appContent), :global(.layout-main) {
-  min-height: 100vh;            /* crece con el contenido */
-  overflow-y: auto;             /* ✅ scroll en el área de contenido */
-}
-
-/* Nuestro wrapper local NO bloquea el scroll del documento */
+/* ====== Layout / Header ====== */
 .wrap {
-  min-height: auto;             /* evita que '100dvh' atrape el viewport */
-  overflow: visible;            /* que no corte el contenido expandido */
+  min-height: 100dvh;
+  font-family: var(
+    --font-body,
+    "Poppins",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    "Helvetica Neue",
+    Arial
+  );
+}
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.2px;
+  margin-bottom: 0px;
+  text-transform: uppercase;
+}
+.subtitle {
+  margin-top: 0px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
 }
 
-/* Si tienes un contenedor de la página con sombra/fondos redondeados... */
-:global(.page-shell) {
-  overflow: visible;            /* no tapes el scroll del body */
+/* ====== Card / Tabla wrapper ====== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--ring);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+.tableWrap {
+  max-height: calc(100dvh - 210px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  border-radius: 16px;
+}
+
+/* ====== Tabla ====== */
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 1200px;
+  text-transform: uppercase;
+}
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475467;
+  letter-spacing: 0.02em;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 var(--line), 0 6px 14px rgba(16, 24, 40, 0.04);
+}
+.table tbody td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-size: 14px;
+}
+.table tbody tr:nth-child(2n) {
+  background: #fafafa;
+}
+.table tbody tr:hover {
+  background: #f2f4f7;
+}
+.clickable {
+  font-weight: 700;
+  cursor: pointer;
+}
+.clickable:hover {
+  color: #111827;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.table select,
+.table button {
+  background: #fff;
+  color: #111827;
+  border: 1px solid var(--ring);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.table button:hover {
+  border-color: var(--brand);
+}
+
+/* ====== Estatus badge ====== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--ring);
+  text-transform: uppercase;
+}
+.badge .dot,
+.badge .dot::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.badge[data-variant="recibido"] {
+  background: #e8f0ff;
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+.badge[data-variant="asignado"] {
+  background: #fff1d6;
+  color: #b45309;
+  border-color: #fde68a;
+}
+.badge[data-variant="terminado"] {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+.badge[data-variant="entregado"] {
+  background: #e0f2fe;
+  color: #075985;
+  border-color: #7dd3fc;
+}
+
+/* ====== Tipo pill por servicio ====== */
+.typePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--ring);
+  background: #f8fafc;
+  color: #475467;
+  text-transform: uppercase;
+}
+.typePill[data-type*="finiquito"] {
+  background: #fff7ed;
+  color: #9a3412;
+  border-color: #fed7aa;
+}
+.typePill[data-type*="no-adeudo"] {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+.typePill[data-type*="histórico-laboral"],
+.typePill[data-type*="historico-laboral"] {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+.typePill[data-type*="percepciones-y-deducciones"] {
+  background: #ecfeff;
+  color: #155e75;
+  border-color: #a5f3fc;
+}
+.typePill[data-type*="solicitud"] {
+  background: #e0f2fe;
+  color: #075985;
+  border-color: #7dd3fc;
+}
+
+/* ====== EN ADEUDO – switch rojo moderno ====== */
+.adeudoSwitch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  border: 1px solid var(--ring);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.adeudoSwitch::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  transition: 0.2s;
+}
+.adeudoSwitch[data-yn="si"] {
+  background: #fee2e2;
+  border-color: #fecaca;
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.08);
+}
+.adeudoSwitch[data-yn="si"]::after {
+  left: 23px;
+  background: #dc2626;
+}
+/* label de texto pequeño (opcional junto al switch) */
+.adeudoLabel {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #991b1b;
+}
+
+/* ====== MONTO – input pill con $ y formato ====== */
+.money {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ring);
+  background: #fff;
+  border-radius: 12px;
+  padding: 6px 10px;
+}
+.money span {
+  color: #475467;
+  font-weight: 700;
+  font-size: 12px;
+}
+.money input {
+  border: 0;
+  outline: none;
+  width: 120px;
+  text-align: right;
+  font-size: 13px;
+  color: #111827;
+  background: transparent;
+}
+.money input::placeholder {
+  color: #94a3b8;
+}
+.money:focus-within {
+  box-shadow: 0 0 0 3px rgba(159, 33, 65, 0.08);
+  border-color: var(--brand);
+}
+
+/* ====== EVIDENCIA – botón clip + nombre truncado ====== */
+.uploadRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.uploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--ring);
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.uploadBtn:hover {
+  border-color: var(--brand);
+}
+.clip {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  border: 1.8px solid #475467;
+  border-radius: 3px;
+  transform: rotate(-45deg);
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
+.fileName {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #475467;
+  font-size: 12px;
+  text-transform: none;
+}
+
+/* ====== Detalle (acordeón) ====== */
+/* ===== Detalle alineado al estilo de la tabla (overrides) ===== */
+
+/* Quita el fondo rosado y alinea bordes/padding con la fila */
+.detailRow td {
+  background: #fff;
+  padding: 0; /* hace que el contenedor controle el padding */
+}
+
+/* Caja del detalle como “sub-card” limpia */
+.detailBox {
+  margin: 8px 10px 12px; /* misma respiración que celdas */
+  padding: 16px 14px;
+  background: #fff;
+  border: 1px solid var(--ring);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+}
+
+/* Título discreto en la misma línea visual */
+.detailTitle {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: #111827;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+/* Meta de cabecera (TIPO / SOLICITANTE / ESTATUS / CREADO) */
+.detailGrid {
+  margin: 12px 0 12px;
+  gap: 12px;
+}
+.detailGrid p {
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  line-height: 1.3;
+}
+.detailGrid b {
+  color: #475467; /* etiqueta gris, valor negro */
+  min-width: 115px; /* alinea columnas */
+  font-weight: 700;
+}
+
+/* Dos columnas balanceadas, con buen gutter */
+.detailColumns {
+  gap: 16px;
+}
+@media (max-width: 920px) {
+  .detailColumns {
+    gap: 10px;
+  }
+}
+
+/* Timeline más compacto y legible */
+.timeline {
+  margin-top: 6px;
+}
+.timeline li {
+  gap: 8px;
+  margin: 8px 0;
+}
+.timelineDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  background: var(--brand);
+}
+.timelineLine {
+  font-weight: 600;
+  color: #0f172a;
+}
+.muted {
+  color: #667085;
+}
+
+/* Documentos: chip + link alineado y sin saltos raros */
+.docs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.docs li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.docType {
+  background: #f8fafc;
+  color: #475467;
+  border-color: var(--ring);
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.docLink {
+  color: #1f2a44;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.docLink:hover {
+  color: #111827;
+}
+
+/* ====== Scrollbar ====== */
+.tableWrap::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.tableWrap::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+.tableWrap::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }
