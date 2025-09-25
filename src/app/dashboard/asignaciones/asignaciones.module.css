@@ -439,3 +439,7 @@
   font-size: 13px;
   min-width: 220px;
 }
+/* asignaciones.module.css */
+.uploadInfo { margin-left: .5rem; font-size: .85rem; opacity: .8; }
+.uploadOk   { margin-left: .5rem; font-size: .85rem; color: #15803d; } /* verde */
+.uploadErr  { margin-left: .5rem; font-size: .85rem; color: #b91c1c; } /* rojo */

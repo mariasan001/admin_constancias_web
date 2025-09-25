@@ -24,6 +24,20 @@ function toTitleCase(input?: string): string {
   );
 }
 
+// Catálogo actualizado
+function getStatusLabel(id: number): string {
+  switch (id) {
+    case 1: return "Recibido";
+    case 2: return "Asignado";
+    case 3: return "En Proceso";
+    case 4: return "Finalizado";
+    case 5: return "Entregado a Servidor";
+    default: return "—";
+  }
+}
+
+const FINALIZADO_ID = 4 as const;
+
 export default function AsignacionesPage() {
   const { user } = useAuthContext();
   const isAdmin   = user?.roles?.some((r) => r.description === "ADMIN") ?? false;
@@ -45,12 +59,18 @@ export default function AsignacionesPage() {
     loading, fetchList,
   } = useTramites(defaultSub);
 
-  // ====== Estado UI local (presentacional) ======
+  // ====== Estado UI local ======
   const [adeudoMap, setAdeudoMap]       = useState<Record<string, boolean>>({});
   const [montoMap, setMontoMap]         = useState<Record<string, string>>({});
+  const [noficioMap, setNoficioMap]     = useState<Record<string, string>>({});
   const [fileNameMap, setFileNameMap]   = useState<Record<string, string>>({});
   const [assigningFolio, setAssigningFolio] = useState<string | null>(null);
   const [rowSaving, setRowSaving]           = useState<string | null>(null);
+
+  // 📤 Feedback de subida
+  const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
+  const [uploadOkMap, setUploadOkMap]   = useState<Record<string, boolean>>({});
+  const [uploadErrMap, setUploadErrMap] = useState<Record<string, string>>({});
 
   // ====== Detalle ======
   const [selected, setSelected] = useState<TramiteFull | null>(null);
@@ -99,17 +119,38 @@ export default function AsignacionesPage() {
 
   const handleTypeChange = async (folio: string, newTypeId: number) => {
     if (!canChangeType) return;
-    try { await changeTramiteType(folio, newTypeId, "Cambio de tipo desde la tabla"); setEditingFolio(null); fetchList(); }
-    catch { alert("No se pudo cambiar el tipo"); }
+    try {
+      await changeTramiteType(folio, newTypeId, "Cambio de tipo desde la tabla");
+      setEditingFolio(null);
+      fetchList();
+    } catch {
+      alert("No se pudo cambiar el tipo");
+    }
   };
 
+  // Cambios de estatus (excepto Finalizado): construye payload según tu regla
   const handleStatusChange = async (folio: string, newStatusId: number) => {
-    if (!user || !canChangeStatus) return;
+    if (!canChangeStatus || !user) return;
+
+    // Regla:
+    // - Si el usuario escribió No. de oficio y NO hay adeudo -> manda 0 y false
+    // - Si no escribió oficio -> manda nulls
+    const of = (noficioMap[folio] ?? "").trim();
+    const hasOficioNoAdeudo = !!of && !(adeudoMap[folio] ?? false);
+
     try {
-      await changeTramiteStatus(folio, newStatusId, user.userId, `Cambio hecho por ${user.name}`);
-      setRows(prev => prev.map(r => r.folio === folio ? { ...r, statusId: newStatusId, statusDesc: getStatusLabel(newStatusId) } : r));
+      await changeTramiteStatus(folio, newStatusId, {
+        actorUserId: user.userId,
+        noficioNoAdeudo: hasOficioNoAdeudo ? of : undefined,
+      });
+
+      setRows(prev => prev.map(r =>
+        r.folio === folio ? { ...r, statusId: newStatusId, statusDesc: getStatusLabel(newStatusId) } : r
+      ));
       setEditingStatusFolio(null);
-    } catch { alert("No se pudo cambiar el estatus"); }
+    } catch {
+      alert("No se pudo cambiar el estatus");
+    }
   };
 
   // ⭐ Asignar/Cambiar analista
@@ -129,7 +170,7 @@ export default function AsignacionesPage() {
               assignedByName: res?.assignedByName ?? user?.name,
               assignedAt: res?.assignedAt ?? new Date().toISOString(),
               statusId: 2,
-              statusDesc: "ASIGNADO",
+              statusDesc: "Asignado",
             }
           : r
       ));
@@ -169,10 +210,7 @@ export default function AsignacionesPage() {
     })();
   }, [rows, setRows]);
 
-  // 🚨 Visibles finales
-  const visibleRows = isAnalyst && user?.userId ? rows.filter(r => r.assignedTo === user.userId) : rows;
-
-  // ===== Helpers: currency =====
+  // ===== Helpers: currency / noficio / adeudo =====
   const formatCurrency = (value: string | number) => {
     const num = typeof value === "number" ? value : Number(String(value).replace(/[^\d.-]/g, "")) || 0;
     return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -185,15 +223,57 @@ export default function AsignacionesPage() {
     const raw = montoMap[folio] ?? "";
     setMontoMap((m) => ({ ...m, [folio]: formatCurrency(raw) }));
   };
-
-  const toggleAdeudo = (folio: string) => setAdeudoMap((a) => ({ ...a, [folio]: !a[folio] }));
-
-  const onPickEvidence = async (folio: string, f?: File) => {
-    if (!f) return;
-    setFileNameMap((m) => ({ ...m, [folio]: f.name })); // muestra nombre
-    await handleStatusChange(folio, 3); // TERMINADO automático
-    // TODO: subir archivo a backend cuando tengas endpoint
+  const handleNoficioInput = (folio: string, v: string) => {
+    setNoficioMap(m => ({ ...m, [folio]: v }));
   };
+  const toggleAdeudo = (folio: string) =>
+    setAdeudoMap((a) => ({ ...a, [folio]: !a[folio] }));
+
+  // ⬆️ Evidencia → FINALIZADO (payload EXACTO) + feedback + refresh
+  const onPickEvidence = async (folio: string, f?: File) => {
+    if (!f || !user) return;
+
+    setUploadErrMap(m => ({ ...m, [folio]: "" }));
+    setUploadOkMap(m => ({ ...m, [folio]: false }));
+    setUploadingMap(m => ({ ...m, [folio]: true }));
+
+    const enAdeudo = adeudoMap[folio] ?? false;
+    const rawMonto = (montoMap[folio] ?? "").replace(/[^\d.-]/g, "");
+    const adeudo = Number(rawMonto || 0);
+    const noficio = (noficioMap[folio] ?? "").trim();
+
+    if (!noficio) {
+      setUploadingMap(m => ({ ...m, [folio]: false }));
+      setUploadErrMap(m => ({ ...m, [folio]: "Escribe el No. de oficio antes de subir." }));
+      return;
+    }
+
+    try {
+      await changeTramiteStatus(folio, FINALIZADO_ID, {
+        actorUserId: user.userId,
+        evidencia: f,
+        fin_adeudo: adeudo,
+        fin_noficio: noficio,
+        fin_enAdeudo: !!enAdeudo,
+      });
+
+      setRows(prev => prev.map(r =>
+        r.folio === folio ? { ...r, statusId: FINALIZADO_ID, statusDesc: getStatusLabel(FINALIZADO_ID) } : r
+      ));
+      setFileNameMap((m) => ({ ...m, [folio]: f.name }));
+      setUploadOkMap(m => ({ ...m, [folio]: true }));
+      await fetchList();
+    } catch (e: any) {
+      console.error("Error al subir evidencia:", e);
+      const msg = e?.response?.data?.message || e?.message || "No se pudo finalizar con evidencia.";
+      setUploadErrMap(m => ({ ...m, [folio]: msg }));
+    } finally {
+      setUploadingMap(m => ({ ...m, [folio]: false }));
+    }
+  };
+
+  // 🚨 Visibles finales
+  const visibleRows = isAnalyst && user?.userId ? rows.filter(r => r.assignedTo === user.userId) : rows;
 
   return (
     <section className={styles.wrap}>
@@ -207,7 +287,7 @@ export default function AsignacionesPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Folio</th>
+                <th>Folio (sistema)</th>
                 <th>Tipo</th>
                 <th>Estatus</th>
                 <th>Asignado a</th>
@@ -216,25 +296,28 @@ export default function AsignacionesPage() {
                 <th>Creado</th>
                 <th>En adeudo</th>
                 <th>Monto</th>
+                <th>No. de oficio</th>
                 <th>Evidencia</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10}>Cargando…</td></tr>
+                <tr><td colSpan={11}>Cargando…</td></tr>
               ) : visibleRows.length ? (
                 visibleRows.map((t) => {
-                  const variant = String(t.statusDesc || "").toLowerCase();
+                  const variant  = String(t.statusDesc || "").toLowerCase();
                   const typeAttr = String(t.tramiteTypeDesc || "").toLowerCase().replace(/\s+/g, "-");
-                  const enAdeudo = adeudoMap[t.folio] ?? (t as any).enAdeudo ?? false;
-                  const monto = montoMap[t.folio] ?? ((t as any).monto != null ? formatCurrency((t as any).monto) : "");
-                  const picked = fileNameMap[t.folio];
-                  const inputId = `file-${t.folio}`;
+                  const enAdeudo = adeudoMap[t.folio] ?? (t as any).enadeudo ?? false;
+                  const monto    = montoMap[t.folio] ?? ((t as any).adeudo != null ? String((t as any).adeudo) : "");
+                  const picked   = fileNameMap[t.folio];
+                  const inputId  = `file-${t.folio}`;
+                  const noficio  = noficioMap[t.folio] ?? (t as any).noficio ?? "";
+                  const isUploading = !!uploadingMap[t.folio];
 
                   return (
                     <React.Fragment key={t.id}>
                       <tr>
-                        {/* Folio */}
+                        {/* Folio (sistema) */}
                         <td className={styles.clickable} onClick={() => handleSelect(t.folio)}>
                           {t.folio}
                         </td>
@@ -267,21 +350,32 @@ export default function AsignacionesPage() {
                           )}
                         </td>
 
-                        {/* Estatus */}
+                        {/* Estatus — Finalizado solo vía evidencia */}
                         <td>
                           {!canChangeStatus ? (
-                            <span className={styles.badge} data-variant={variant}><span className="dot" /> {toTitleCase(t.statusDesc)}</span>
+                            <span className={styles.badge} data-variant={variant}>
+                              <span className="dot" /> {toTitleCase(t.statusDesc)}
+                            </span>
                           ) : editingStatusFolio === t.folio ? (
                             <select
                               autoFocus
                               value={t.statusId}
-                              onChange={(e) => handleStatusChange(t.folio, Number(e.target.value))}
+                              onChange={(e) => {
+                                const v = Number(e.target.value);
+                                if (v === FINALIZADO_ID) {
+                                  alert("Para marcar como FINALIZADO debes subir evidencia y llenar los datos requeridos.");
+                                  setEditingStatusFolio(null);
+                                  return;
+                                }
+                                handleStatusChange(t.folio, v);
+                              }}
                               onBlur={() => setEditingStatusFolio(null)}
                             >
                               <option value={1}>Recibido</option>
                               <option value={2}>Asignado</option>
-                              <option value={3}>Terminado</option>
-                              <option value={4}>Entregado</option>
+                              <option value={3}>En Proceso</option>
+                              <option value={5}>Entregado a Servidor</option>
+                              {/* Finalizado (4) se gestiona al subir evidencia */}
                             </select>
                           ) : (
                             <button
@@ -360,23 +454,49 @@ export default function AsignacionesPage() {
                           </span>
                         </td>
 
-                        {/* EVIDENCIA */}
+                        {/* No. de oficio */}
+                        <td>
+                          <input
+                            className={styles.noficioInput}
+                            value={noficio}
+                            placeholder="OF/DTI/123/2025"
+                            onChange={(e) => handleNoficioInput(t.folio, e.target.value)}
+                          />
+                        </td>
+
+                        {/* EVIDENCIA (dispara FINALIZADO) */}
                         <td>
                           <div className={styles.uploadRow}>
                             <input
                               id={inputId}
                               type="file"
                               style={{ display: "none" }}
-                              onChange={async (e) => {
-                                const f = e.target.files?.[0];
-                                await onPickEvidence(t.folio, f);
-                                e.currentTarget.value = "";
+                              onChange={(e) => {
+                                const input = e.currentTarget as HTMLInputElement;
+                                const f = input.files?.[0];
+                                onPickEvidence(t.folio, f).finally(() => {
+                                  input.value = "";
+                                });
                               }}
                             />
-                            <label htmlFor={inputId} className={styles.uploadBtn}>
+                            <label
+                              htmlFor={inputId}
+                              className={styles.uploadBtn}
+                              aria-disabled={isUploading}
+                              style={isUploading ? { opacity: 0.6, pointerEvents: "none" } : undefined}
+                            >
                               <i className={styles.clip}></i> Subir
                             </label>
+
+                            {/* Nombre del archivo */}
                             {picked ? <span className={styles.fileName}>{toTitleCase(picked)}</span> : null}
+
+                            {/* Feedback de subida */}
+                            {isUploading && <span className={styles.uploadInfo}>Subiendo…</span>}
+                            {uploadOkMap[t.folio] && !isUploading && <span className={styles.uploadOk}>✓ Subido</span>}
+                            {uploadErrMap[t.folio] && !isUploading && (
+                              <span className={styles.uploadErr}>⚠ {uploadErrMap[t.folio]}</span>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -384,7 +504,7 @@ export default function AsignacionesPage() {
                       {/* Detalle expandible */}
                       {openFolio === t.folio && selected && (
                         <tr className={styles.detailRow}>
-                          <td colSpan={10}>
+                          <td colSpan={11}>
                             {loadingDetail ? (
                               <div className={styles.detailBox}>Cargando detalle…</div>
                             ) : (
@@ -416,22 +536,6 @@ export default function AsignacionesPage() {
                                           </li>
                                         ))}
                                       </ul>
-                                    ) : <p className={styles.muted}>Sin historial</p>}
-                                  </div>
-                                  <div>
-                                    <h5>Documentos</h5>
-                                    {selected.docs?.length ? (
-                                      <ul className={styles.docs}>
-                                        {selected.docs.map((d) => (
-                                          <li key={d.id}>
-                                            <span className={styles.docType}>{toTitleCase(d.docTypeDesc)}</span>
-                                            <a href={d.downloadUrl} target="_blank" rel="noreferrer" className={styles.docLink}>
-                                              {toTitleCase(d.originalName)}
-                                            </a>
-                                            <span className={styles.muted}> · {(d.sizeBytes / 1024).toFixed(1)} KB</span>
-                                          </li>
-                                        ))}
-                                      </ul>
                                     ) : <p className={styles.muted}>Sin documentos</p>}
                                   </div>
                                 </div>
@@ -444,7 +548,7 @@ export default function AsignacionesPage() {
                   );
                 })
               ) : (
-                <tr><td colSpan={10}>Sin resultados</td></tr>
+                <tr><td colSpan={11}>Sin resultados</td></tr>
               )}
             </tbody>
           </table>
@@ -452,15 +556,4 @@ export default function AsignacionesPage() {
       </div>
     </section>
   );
-}
-
-// Utilidad para traducir IDs de estatus
-function getStatusLabel(id: number): string {
-  switch (id) {
-    case 1: return "Recibido";
-    case 2: return "Asignado";
-    case 3: return "Terminado";
-    case 4: return "Entregado";
-    default: return "—";
-  }
 }

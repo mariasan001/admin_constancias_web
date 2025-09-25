@@ -54,19 +54,97 @@ export async function listTramiteTypes(): Promise<TramiteType[]> {
   return data?.content ?? [];
 }
 
+
 /* =========================================================
- * 🔄 Cambio de estatus
+ * 🔄 Cambio de estatus (soporta multipart cuando hay evidencia)
+ *  - FINALIZADO: evidencia + data (multipart)
+ *  - Otros estatus: data = null (JSON)
  * =======================================================*/
+
+type CommonData = {
+  toStatusId: number;
+  actorUserId: string;
+  comment: string | "null";
+  adeudo: number | null;
+  noficio: string | "null";
+  enadeudo: boolean | null;
+};
+
+/**
+ * Cambia estatus de un trámite.
+ * - Para TODOS los estatus, el backend requiere query param `data` (String).
+ * - FINALIZADO (4): además se envía evidencia en multipart.
+ */
 export async function changeTramiteStatus(
   folio: string,
   toStatusId: number,
-  actorUserId: string,
-  actorUserName: string
+  opts: {
+    actorUserId: string;
+
+    // Para FINALIZADO (4):
+    evidencia?: File | Blob | null;
+    fin_adeudo?: number;        // adeudo para 4
+    fin_noficio?: string;       // noficio para 4
+    fin_enAdeudo?: boolean;     // enadeudo para 4
+
+    // Para estados ≠ 4 (opcional):
+    // si no provees noficioNoAdeudo, se mandan nulls.
+    noficioNoAdeudo?: string;   // si hay oficio pero adeudo=0 y enadeudo=false
+  }
 ) {
-  const comment = `Cambio hecho por ${actorUserName}`;
+  const isFinalizado = Number(toStatusId) === 4;
+
+  if (isFinalizado) {
+    const dataObj: CommonData = {
+      toStatusId,
+      actorUserId: opts.actorUserId,
+      comment: "Se aprobó con oficio y evidencia",
+      adeudo: Number(opts.fin_adeudo ?? 0),
+      noficio: String(opts.fin_noficio ?? ""),
+      enadeudo: Boolean(opts.fin_enAdeudo ?? false),
+    };
+
+    const fd = new FormData();
+    if (opts.evidencia) fd.append("evidencia", opts.evidencia as Blob);
+
+    const { data } = await api.patch(
+      `/api/tramites/${encodeURIComponent(folio)}/status`,
+      fd,
+      {
+        params: { data: JSON.stringify(dataObj) }, // <- data SIEMPRE en query
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    return data;
+  }
+
+  // ===== Estatus distintos a 4 =====
+  const hasOficio = !!opts.noficioNoAdeudo?.trim();
+
+  const dataObj: CommonData = hasOficio
+    // Caso B: NO hay adeudo pero sí oficio
+    ? {
+        toStatusId,
+        actorUserId: opts.actorUserId,
+        comment: "null",
+        adeudo: 0,
+        noficio: String(opts.noficioNoAdeudo),
+        enadeudo: false,
+      }
+    // Caso A: todo null (sin oficio, sin adeudo)
+    : {
+        toStatusId,
+        actorUserId: opts.actorUserId,
+        comment: "null",
+        adeudo: null,
+        noficio: "null",
+        enadeudo: null,
+      };
+
   const { data } = await api.patch(
     `/api/tramites/${encodeURIComponent(folio)}/status`,
-    { toStatusId, actorUserId, comment }
+    {}, // body vacío; el backend lee `data` del query
+    { params: { data: JSON.stringify(dataObj) } }
   );
   return data;
 }
