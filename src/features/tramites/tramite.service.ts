@@ -155,7 +155,7 @@ export async function changeTramiteStatus(
 export async function assignTramite(folio: string, assigneeUserId: string) {
   const payload = {
     assigneeUserId,
-    comment: "Asignación por carga de trabajo",
+    comment: "Asignación al analista",
     newStatusId: 2, // ASIGNADO
   };
 
@@ -197,22 +197,26 @@ export async function listAnalystsBySubarea(
   }));
 }
 
+// === Evidencia de un trámite ===
+export async function getTramiteEvidence(
+  folio: string,
+  inline = true
+): Promise<{ blob: Blob; filename: string; contentType: string }> {
+  const res = await api.get(
+    `/api/tramites/${encodeURIComponent(folio)}/evidencia`,
+    {
+      params: { inline },           // true = “ver en navegador”, false = “descargar”
+      responseType: "blob",         // <- muy importante para recibir el binario
+    }
+  );
 
-/**
- * aremos una actualziacion :
- * actuamente tenemso esto per  ahora ya que colcoar si es adeudo o no.,  el moneto 
- * el numero de oficion   y la idenvia todo es flujone st abine 
- * 
- * pero como se añadieorn estyo s campos mas o esta pai mas 
- * se tiene que hacer una modificacion en una de la spais ára que
- * nos triga pues la respuesta:
- * 
- * ahora acumente se ve por ejplo en: monto  numeor d eoficon  u  envidencia 
- * comoedicion  y.. si esta bine pero creo esteicmente severi amejor 
- * que se avilita la decicon  cuando de da clcie en el campo a ediotar
- *  ahora si ya se subiop algo :  debde de tate su info que se tiene }
- * como es  el tipod eadeudio si si o no ,  en moento mostrar elmonto peroya no asi cmoe dicion
- * que si se peude ediar pero al dar dobl eclci  el nmero de forlio con su nuemro que sel e dio,  y en evivencia el nobmre de la endicencia 
- * si no han subido nada..  en monto cocoar $0.00 eñ de si adeiddo o no  cmo apagado 
- * el nmeor de ifcion colar sin nuero d eoficion  y en enviceia sin evidencia  al dar lci ahor asi ay suvir tdo 
- * recuerd ano mmovert nada de lo que ya est aehco  te pasare los codigo involucrado s */
+  const contentType = res.headers["content-type"] || "application/octet-stream";
+  const cd = (res.headers["content-disposition"] as string) || "";
+  // intenta filename*=UTF-8''..., luego filename="..."
+  const m =
+    /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd) || undefined;
+  const rawName = m?.[1] ?? m?.[2] ?? `evidencia-${folio}`;
+  const filename = decodeURIComponent(rawName);
+
+  return { blob: res.data as Blob, filename, contentType };
+}

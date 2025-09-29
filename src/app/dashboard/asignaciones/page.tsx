@@ -13,6 +13,7 @@ import {
   listAnalystsBySubarea,
   assignTramite,
   searchTramites,
+  getTramiteEvidence, // 👈 NUEVO
 } from "@/features/tramites/tramite.service";
 import type { TramiteFull, TramiteType, Analyst } from "@/features/tramites/tramite.model";
 
@@ -288,6 +289,37 @@ export default function AsignacionesPage() {
     }
   };
 
+  // ====== NUEVO: Ver / Descargar evidencia usando la nueva API ======
+  const viewEvidence = async (folio: string) => {
+    try {
+      const { blob } = await getTramiteEvidence(folio, true);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo abrir la evidencia.");
+    }
+  };
+
+  const downloadEvidence = async (folio: string) => {
+    try {
+      const { blob, filename } = await getTramiteEvidence(folio, false);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename || `evidencia-${folio}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo descargar la evidencia.");
+    }
+  };
+  // ===================================================================
+
   const visibleRows = isAnalyst && user?.userId ? rows.filter(r => r.assignedTo === user.userId) : rows;
 
   return (
@@ -470,6 +502,28 @@ export default function AsignacionesPage() {
                             {picked
                               ? <span className={styles.fileName}>{toTitleCase(picked)}</span>
                               : <span className={styles.muted}>Sin evidencia</span>}
+
+                            {/* NUEVO: acciones Ver / Descargar cuando hay evidencia */}
+                            {picked && !isUploading && (
+                              <>
+                                <button
+                                  type="button"
+                                  className={styles.linkBtn}
+                                  onClick={() => viewEvidence(t.folio)}
+                                  title="Ver evidencia"
+                                >
+                                  Ver
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.linkBtn}
+                                  onClick={() => downloadEvidence(t.folio)}
+                                  title="Descargar evidencia"
+                                >
+                                  Descargar
+                                </button>
+                              </>
+                            )}
 
                             {isUploading && <span className={styles.uploadInfo}>Subiendo…</span>}
                             {uploadOkMap[t.folio] && !isUploading && <span className={styles.uploadOk}>✓ Subido</span>}

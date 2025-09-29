@@ -61,7 +61,7 @@ export function useTramites(
 export async function assignTramite(folio: string, assigneeUserId: string) {
   const payload = {
     assigneeUserId,
-    comment: "Asignación por carga de trabajo",
+    comment: "Asignación a",
     newStatusId: 2,
   };
   const { data } = await api.patch(
