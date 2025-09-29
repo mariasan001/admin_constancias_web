@@ -24,6 +24,12 @@ export type Tramite = {
   assignedByName?: string | null;
 
   docsCount: number;
+
+  // 🔥 NUEVOS (vienen en /api/tramites/search)
+  adeudo?: number | null;        // ej. 3434, 0 o null
+  noficio?: string | null;       // ej. "OF/DTI/123/2025"
+  evidencia?: string | null;     // ej. "evidencias/xxx.jpg"
+  enadeudo?: boolean | null;     // true/false/null
 };
 
 // Página de resultados

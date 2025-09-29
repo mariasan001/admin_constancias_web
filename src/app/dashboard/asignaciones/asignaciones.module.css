@@ -4,7 +4,7 @@
   --card: #fff;
   --text: #0a0a0a;
   --muted: #667085;
-  --ring: rgba(16, 24, 40, 0.08);
+  --ring: rgba(16, 24, 40, 0.12);
   --line: rgba(16, 24, 40, 0.08);
   --brand: #9f2141;
   --brand-200: #b54562;
@@ -12,62 +12,51 @@
   --danger: #dc2626;
 }
 
-/* ====== Layout / Header ====== */
-.wrap {
-  min-height: 100dvh;
-  font-family: var(
-    --font-body,
-    "Poppins",
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    "Helvetica Neue",
-    Arial
-  );
-}
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 10px;
-}
+
 .title {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: 0.2px;
-  margin-bottom: 0;
+  margin: 0;
 }
 .subtitle {
-  margin-top: 0;
+  margin: 0;
   font-size: 13px;
   color: var(--muted);
+  margin-bottom: 20px;
 }
 
 /* ====== Card / Tabla wrapper ====== */
 .card {
   background: var(--card);
   border: 1px solid var(--ring);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.06);
-}
-.tableWrap {
-  max-height: calc(100dvh - 210px);
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  border-radius: 16px;
+  width: 1400px;
+  height: 600px;
 }
 
-/* ====== Tabla ====== */
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 1200px;
+
+/* Sombras laterales para indicar que hay más contenido */
+.tableWrap::before,
+.tableWrap::after {
+  content: "";
+  position: sticky;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  pointer-events: none;
+  z-index: 2;
 }
+.tableWrap::before {
+  left: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent);
+}
+.tableWrap::after {
+  right: 0;
+  background: linear-gradient(-90deg, rgba(0, 0, 0, 0.08), transparent);
+}
+
+
 .table thead th {
   position: sticky;
   top: 0;
@@ -76,28 +65,30 @@
   text-align: left;
   font-size: 12.5px;
   font-weight: 800;
-  color: #000000;
+  color: #000;
   letter-spacing: 0.02em;
-  padding: 12px 14px;
+  padding: 8px 3px;
   border-bottom: 1px solid var(--line);
   box-shadow: 0 1px 0 var(--line), 0 6px 14px rgba(16, 24, 40, 0.04);
 }
 .table tbody td {
   padding: 13px 14px;
   border-bottom: 1px solid var(--line);
-  color: rgb(73, 71, 71);
-  font-size: 13px;
+  color: #494747;
+  font-size: 12px;
+  background: #fff;
 }
-.table tbody tr:nth-child(2n) {
+.table tbody tr:nth-child(even) {
   background: #fafafa;
 }
 .table tbody tr:hover {
   background: #f2f4f7;
 }
+
 .clickable {
   font-weight: 500;
   cursor: pointer;
-  font-family:var(--font-body);
+  font-family: var(--font-body);
 }
 .clickable:hover {
   color: #111827;
@@ -105,22 +96,57 @@
   text-underline-offset: 3px;
 }
 
+/* Controles base en celdas */
 .table select,
 .table button {
   background: #fff;
-  color: #000000;
+  color: #000;
   border: 1px solid var(--ring);
   border-radius: 10px;
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   text-align: left;
 }
-.table button:hover {
+.table button:hover,
+.table select:focus {
+  border-color: var(--brand);
+}
+.table select:focus-visible,
+.table button:focus-visible,
+.table input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(159, 33, 65, 0.12);
   border-color: var(--brand);
 }
 
-/* ====== Estatus badge ====== */
+/* Mantener en una línea en celdas/encabezados */
+.table td,
+.table th {
+  white-space: nowrap;
+}
+
+/* ===== Sticky primera columna: Folio ===== */
+.table thead th:first-child,
+.table tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+  box-shadow: 1px 0 0 var(--line);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.table {
+  display: inline-block;
+  width: auto;
+  min-width: 980px !important;
+}
+
+/* ===== Estatus badge ====== */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -131,37 +157,41 @@
   font-size: 12px;
   border: 1px solid var(--ring);
 }
-.badge .dot,
-.badge .dot::before {
-  content: "";
-  display: inline-block;
+.badge .dot {
   width: 8px;
   height: 8px;
   border-radius: 999px;
   background: currentColor;
 }
+
+/* Mapea al texto exacto en minúsculas del status */
 .badge[data-variant="recibido"] {
-  background: #e8f0ff;
-  color: #1d4ed8;
-  border-color: #c7d2fe;
+  background: #eff7f9;
+  color: #093992;
+
 }
 .badge[data-variant="asignado"] {
-  background: #fff1d6;
-  color: #b45309;
-  border-color: #fde68a;
+  background: #fdfbf4;
+  color: #896a12;
+
 }
-.badge[data-variant="terminado"] {
+.badge[data-variant="en proceso"] {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+.badge[data-variant="finalizado"] {
   background: #dcfce7;
   color: #166534;
   border-color: #86efac;
 }
-.badge[data-variant="entregado"] {
+.badge[data-variant="entregado por ventanilla"] {
   background: #e0f2fe;
   color: #075985;
   border-color: #7dd3fc;
 }
 
-/* ====== Tipo pill por servicio ====== */
+/* ===== Tipo pill por servicio ===== */
 .typePill {
   display: inline-flex;
   align-items: center;
@@ -240,7 +270,8 @@
 .money {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 1px;
+  width: 120px;
   border: 1px solid var(--ring);
   background: #fff;
   border-radius: 12px;
@@ -254,9 +285,9 @@
 .money input {
   border: 0;
   outline: none;
-  width: 120px;
+  width: 100px; /* compacto */
   text-align: right;
-  font-size: 13px;
+  font-size: 12px;
   color: #111827;
   background: transparent;
 }
@@ -266,6 +297,20 @@
 .money:focus-within {
   box-shadow: 0 0 0 3px rgba(159, 33, 65, 0.08);
   border-color: var(--brand);
+}
+
+/* ====== No. de oficio ====== */
+.noficioInput {
+  width: 100px; /* compacto */
+  padding: 6px 10px;
+  border: 1px solid var(--ring);
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+}
+.noficioInput::placeholder {
+  color: #94a3b8;
 }
 
 /* ====== EVIDENCIA ====== */
@@ -299,12 +344,33 @@
   border-left-color: transparent;
 }
 .fileName {
-  max-width: 260px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #475467;
-  font-size: 2px;
+  font-size: 12px;
+}
+.muted {
+  color: #667085;
+  font-size: 12px;
+}
+
+/* Feedback de subida */
+.uploadInfo {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.uploadOk {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  color: #15803d;
+}
+.uploadErr {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
 }
 
 /* ====== Detalle ====== */
@@ -329,7 +395,7 @@
   padding-bottom: 8px;
 }
 .detailGrid {
-  margin: 12px 0 12px;
+  margin: 12px 0;
   gap: 12px;
 }
 .detailGrid p {
@@ -354,8 +420,11 @@
 }
 .timeline {
   margin-top: 6px;
+  padding-left: 0;
+  list-style: none;
 }
 .timeline li {
+  display: flex;
   gap: 8px;
   margin: 8px 0;
 }
@@ -364,14 +433,14 @@
   height: 8px;
   margin-top: 6px;
   background: var(--brand);
+  border-radius: 999px;
 }
 .timelineLine {
   font-weight: 600;
   color: #0f172a;
 }
-.muted {
-  color: #667085;
-}
+
+/* ===== Documentos (si los usas en el detalle) ===== */
 .docs {
   display: flex;
   flex-direction: column;
@@ -386,7 +455,7 @@
 .docType {
   background: #f8fafc;
   color: #475467;
-  border-color: var(--ring);
+  border: 1px solid var(--ring);
   border-radius: 999px;
   padding: 4px 8px;
   font-size: 12px;
@@ -400,7 +469,7 @@
   color: #111827;
 }
 
-/* ====== Scrollbar ====== */
+/* ===== Scrollbar ===== */
 .tableWrap::-webkit-scrollbar {
   height: 10px;
   width: 10px;
@@ -439,7 +508,45 @@
   font-size: 13px;
   min-width: 220px;
 }
-/* asignaciones.module.css */
-.uploadInfo { margin-left: .5rem; font-size: .85rem; opacity: .8; }
-.uploadOk   { margin-left: .5rem; font-size: .85rem; color: #15803d; } /* verde */
-.uploadErr  { margin-left: .5rem; font-size: .85rem; color: #b91c1c; } /* rojo */
+
+/* ===== Modo compacto (≤ 1360px) ===== */
+@media (max-width: 1360px) {
+  .table thead th {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .table tbody td {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+  .assigneeSelect {
+    min-width: 200px;
+  }
+  .noficioInput {
+    width: 180px;
+  }
+  .money input {
+    width: 90px;
+  }
+}
+
+/* ===== Súper compacto (≤ 1200px) ===== */
+@media (max-width: 1200px) {
+  .table thead th,
+  .table tbody td {
+    padding: 8px 10px;
+  }
+  .typePill,
+  .badge {
+    padding: 4px 8px;
+    font-size: 11.5px;
+  }
+  .assigneeBtn {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
+  .uploadBtn {
+    padding: 5px 10px;
+    font-size: 11.5px;
+  }
+}

@@ -1,0 +1,93 @@
+/* =========================================
+   Celdas y Controles (cells.module.css)
+   — Usa los tokens definidos globalmente:
+   --ring, --brand, --muted, etc.
+   ========================================= */
+
+/* ---------- Badge de Estatus ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--ring);
+  background: #f8fafc;
+  color: #111827;
+}
+
+/* La bolita dentro del badge (el componente usa className="dot") */
+.badge :global(.dot) {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* Variantes por data-variant (texto en minúsculas) */
+.badge[data-variant="recibido"]                 { background:#e8f0ff; color:#1d4ed8; border-color:#c7d2fe; }
+.badge[data-variant="asignado"]                 { background:#fff1d6; color:#b45309; border-color:#fde68a; }
+.badge[data-variant="en proceso"]               { background:#eef2ff; color:#3730a3; border-color:#c7d2fe; }
+.badge[data-variant="finalizado"]               { background:#dcfce7; color:#166534; border-color:#86efac; }
+.badge[data-variant="entregado por ventanilla"] { background:#e0f2fe; color:#075985; border-color:#7dd3fc; }
+
+/* ---------- Type Pill (tipo de trámite) ---------- */
+.typePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 12px;
+  border: 1px solid var(--ring);
+  background: #f8fafc;
+  color: #475467;
+  cursor: default;
+}
+.typePill[data-type] { cursor: inherit; } /* button o span */
+.typePill:hover { border-color: var(--brand); }
+
+/* Colores por tipo (usa data-type en minúsculas con guiones) */
+.typePill[data-type*="finiquito"] { background:#fff7ed; color:#9a3412; border-color:#fed7aa; }
+.typePill[data-type*="no-adeudo"] { background:#eef2ff; color:#3730a3; border-color:#c7d2fe; }
+.typePill[data-type*="histórico-laboral"],
+.typePill[data-type*="historico-laboral"] { background:#f5f3ff; color:#6d28d9; border-color:#ddd6fe; }
+.typePill[data-type*="percepciones-y-deducciones"] { background:#ecfeff; color:#155e75; border-color:#a5f3fc; }
+.typePill[data-type*="solicitud"] { background:#e0f2fe; color:#075985; border-color:#7dd3fc; }
+
+/* ---------- Switch En Adeudo ---------- */
+.adeudoSwitch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  border: 1px solid var(--ring);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.adeudoSwitch::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+  transition: 0.2s;
+}
+.adeudoSwitch[data-yn="si"] {
+  background: #fee2e2;
+  border-color: #fecaca;
+  box-shadow: inset 0 0 0 2px rgba(220, 38, 38, 0.08);
+}
+.adeudoSwitch[data-yn="si"]::after { left: 23px; background: #dc2626; }
+

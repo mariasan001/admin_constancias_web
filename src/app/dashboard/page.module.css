@@ -1,27 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap');
-body{
-  font-family: "Cabin", sans-serif !important;
-}
 :root{
   --brand:#9F2141; --text:#0A0A0A; --muted:#6b6b6b; --bg:#f4f4f4; --radius:16px;
 }
 
-.main{
-  min-height:100dvh;
-  background:var(--bg);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
+/* Usa la var creada por next/font */
+body{
+  font-family: var(--font-body), system-ui, sans-serif;
+  background: var(--bg);
 }
 
-.card{
-  width:min(760px, 92vw);
-  background:#fff;
-  border-radius:var(--radius);
-  box-shadow:0 10px 30px rgba(0,0,0,.08);
-  padding:28px;
-}
+.main{ min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.card{ width:min(760px, 92vw); background:#fff; border-radius:var(--radius); box-shadow:0 10px 30px rgba(0,0,0,.08); padding:28px; }
 
 .h1{ margin:0 0 8px; font-size:clamp(22px, 2.6vw, 28px); color:var(--text); }
 .bold{ font-weight:800; }

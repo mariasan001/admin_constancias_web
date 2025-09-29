@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await apiLogin({ username, password });
       const u = await me();
       setUser(u);
-      router.replace("/dashboard"); // ajusta tu ruta de landing
+      router.replace("/dashboard"); 
     } finally {
       setLoading(false);
     }
