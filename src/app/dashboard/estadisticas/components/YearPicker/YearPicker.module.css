@@ -1,0 +1,17 @@
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+}
+
+.picker label { color: var(--muted); font-weight: 600; font-size: 13px; }
+
+.picker input {
+  border: 0; outline: none; background: transparent;
+  font-weight: 700; font-size: 14px; color: var(--text);
+}

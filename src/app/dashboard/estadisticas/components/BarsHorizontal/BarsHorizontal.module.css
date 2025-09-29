@@ -1,0 +1,5 @@
+.svgWrap { width: 100%; overflow: auto; }
+.svg { width: 100%; height: auto; display: block; }
+.bar { fill: var(--bar); }
+.axisX { font-size: 11px; fill: var(--muted); }
+.axisLabel { font-size: 12px; fill: #1f1c1a; dominant-baseline: middle; }

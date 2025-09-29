@@ -1,0 +1,43 @@
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 1100px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .kpis { grid-template-columns: 1fr; } }
+
+.kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-2);
+  padding: 18px 18px 14px;
+  position: relative;
+}
+
+.kpiValue {
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+
+.kpiLabel {
+  color: var(--muted);
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.deltaUp, .deltaDown {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 800; padding: 4px 10px; border-radius: 999px; font-size: 12px;
+  border: 1px solid transparent;
+}
+.deltaUp   { color: #0b7a57; background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.25); }
+.deltaDown { color: #b91c1c; background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.25); }

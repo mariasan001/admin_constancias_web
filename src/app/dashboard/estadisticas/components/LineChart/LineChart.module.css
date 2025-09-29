@@ -1,0 +1,42 @@
+.wrap { width: 100%; }
+
+.axisX { font-size: 12px; fill: var(--muted); }
+
+.balloon {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 160px;
+}
+.balloonTitle {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.balloonTitle b { font-weight: 900; }
+.row {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+.row span { color: var(--muted); }
+.row b { font-weight: 800; }
+
+.caret {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  transform: translateX(-50%);
+  width: 12px; height: 12px;
+  background: #fff;
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform-origin: center;
+  rotate: 45deg;
+  box-shadow: 2px 2px 6px rgba(10,10,10,.06);
+}
