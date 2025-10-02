@@ -30,9 +30,7 @@
 .wrap {
   display: grid;
   gap: 22px;
-  padding: 20px 22px 28px;
-  background: var(--bg);
-  min-height: 100%;
+
 }
 
 /* Tarjeta “comodín” para estados (loading/error/empty) */
@@ -51,3 +49,99 @@
   gap: 16px;
 }
 @media (max-width: 1100px) { .grid2 { grid-template-columns: 1fr; } }
+/* === Actions (pills + botón) === */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Grupo de pills */
+.pills {
+  display: inline-flex;
+  gap: 0;                     /* los botones van pegaditos dentro del chip */
+  padding: 4px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+
+/* Cada pill */
+.pill {
+  appearance: none;
+  border: 0;
+  background: rgb(245, 245, 245);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6f6a65;
+  line-height: 1;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+
+.pill:hover {
+  background: rgba(255,255,255,.8);
+  color: var(--text);
+}
+
+.pill:active { transform: translateY(1px); }
+
+/* Estado activo via aria-pressed */
+.pill[aria-pressed="true"] {
+  background: #fff;
+  color: var(--text);
+  box-shadow: var(--shadow-1);
+}
+
+/* Accesibilidad: foco visible */
+.pill:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px rgba(159, 33, 65, .35); /* anillo vino suave */
+}
+
+/* Botón PDF */
+.btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background:rgb(56, 3, 3);
+  color: rgb(255, 255, 255);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
+  transition: transform .05s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.btn:hover { box-shadow: var(--shadow-2); }
+.btn:active { transform: translateY(1px); }
+
+.btn:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px rgba(214, 178, 107, .5); /* anillo dorado */
+}
+
+/* Responsive: compactar en pantallas chicas */
+@media (max-width: 640px) {
+  .actions { gap: 10px; }
+  .pill { padding: 7px 10px; font-size: 11px; }
+  .btn  { padding: 9px 10px; font-size: 11px; }
+}
+
+/* Respeto a usuarios con reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .pill, .btn { transition: none; }
+}

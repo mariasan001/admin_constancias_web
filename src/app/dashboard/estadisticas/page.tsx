@@ -1,25 +1,81 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./estadisticas.module.css";
 
 import { getTramitesSummary } from "@/features/reports/reports.service";
 import { MONTHS, TramitesSummary, titleCase } from "@/features/reports/reports.model";
 
-// tipos UI
 import type { BarItem, LinePoint } from "./components/estadisticas/types";
-
-// UI
 import HeaderStats from "./components/HeaderStats/HeaderStats";
 import KPIGrid from "./components/KpiGrid/KpiGrid";
 import Card from "./components/Card/Card";
 import BarsColumns from "./components/BarsColumns/BarsColumns";
-import BarsHorizontal from "./components/BarsHorizontal/BarsHorizontal"; // si lo sigues usando en otra vista
 import LineChartRe, { PeriodPoint } from "./components/LineChart/LineChart";
 import DailyPerformance from "./components/BarsColumns/BarsColumns";
 
-// ✅ NUEVOS: chart con Recharts + lista diaria
+/* ====================================================================
+   Helpers SERIE DIARIA robustos (30d / 7d)
+   ==================================================================== */
+type AnyDaily = Array<{ date: string; status?: string | null; total: number }>;
 
+function findDailyArray(d: any): AnyDaily | null {
+  // Intenta varios nombres típicos:
+  const candidates = [
+    d?.byDayStatus,
+    d?.byDateStatus,
+    d?.daily,
+    d?.byDay,
+    d?.byDate,
+  ];
+  const arr = candidates.find((x) => Array.isArray(x) && x.length > 0);
+  if (!arr) return null;
+
+  // Normaliza shape: {date, status?, total}
+  return (arr as any[]).map((r) => ({
+    date: r.date ?? r.day ?? r.fecha ?? r.Date ?? r?.dt,
+    status: (r.status ?? r.estado ?? r.State ?? "").toString(),
+    total: Number(r.total ?? r.value ?? r.Total ?? 0),
+  })) as AnyDaily;
+}
+
+/** Construye un Map YYYY-MM-DD -> {created, pending} */
+function buildDailyMap(d: AnyDaily | null) {
+  const map = new Map<string, { created: number; pending: number }>();
+  if (!d) return map;
+
+  for (const row of d) {
+    const iso = (row.date || "").slice(0, 10);
+    if (!iso) continue;
+
+    const rec = map.get(iso) ?? { created: 0, pending: 0 };
+    rec.created += row.total;
+    if ((row.status ?? "").toUpperCase() !== "FINALIZADO") rec.pending += row.total;
+    map.set(iso, rec);
+  }
+  return map;
+}
+
+/** Últimos N días continuos hasta HOY, rellenando con 0 si no existe el día */
+function lastNDaysContinuous(
+  n: number,
+  dailyMap: Map<string, { created: number; pending: number }>
+) {
+  const out: { iso: string; created: number; pending: number }[] = [];
+  const today = new Date();
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const rec = dailyMap.get(iso) ?? { created: 0, pending: 0 };
+    out.push({ iso, created: rec.created, pending: rec.pending });
+  }
+  return out;
+}
+
+/* ====================================================================
+   Data hook
+   ==================================================================== */
 function useSummary(year?: number) {
   const [data, setData] = useState<TramitesSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,12 +100,18 @@ function useSummary(year?: number) {
   return { data, loading, err };
 }
 
+/* ====================================================================
+   Page
+   ==================================================================== */
+type Range = "12m" | "6m" | "30d" | "7d";
+
 export default function EstadisticasPage() {
   const yearNow = new Date().getFullYear();
   const [year, setYear] = useState<number>(yearNow);
+  const [range, setRange] = useState<Range>("12m");
   const { data, loading, err } = useSummary(year);
 
-  // ===== KPIs
+  // ================= KPIs =================
   const kpis = useMemo(() => {
     if (!data) return [];
     const totalYear = data.byYear.find(x => x.year === year)?.total ?? 0;
@@ -78,17 +140,16 @@ export default function EstadisticasPage() {
     ];
   }, [data, year]);
 
-  // ===== Serie mensual (línea principal)
-  const monthlyLine = useMemo<LinePoint[]>(() => {
-    if (!data) return [];
-    const monthTotals = new Array(12).fill(0);
+  // =============== SERIES MENSUALES ===============
+  const monthlyCreated = useMemo<number[]>(() => {
+    if (!data) return new Array(12).fill(0);
+    const totals = new Array(12).fill(0);
     data.byMonthStatus
       .filter(m => m.year === year)
-      .forEach(m => { monthTotals[m.month - 1] += m.total; });
-    return monthTotals.map((v, i) => ({ x: i, y: v, label: MONTHS[i] }));
+      .forEach(m => { totals[m.month - 1] += m.total; });
+    return totals;
   }, [data, year]);
 
-  // ✅ Serie “pendientes” por mes (derivada, sin tocar API)
   const monthlyPending = useMemo<number[]>(() => {
     if (!data) return new Array(12).fill(0);
     const arr = new Array(12).fill(0);
@@ -98,18 +159,52 @@ export default function EstadisticasPage() {
     return arr;
   }, [data, year]);
 
-  // ✅ Data para Recharts (como en el mock: dorado = created, vino = pending)
-  const chartData = useMemo<PeriodPoint[]>(() => {
-    const created = monthlyLine.map(p => p.y);
+  const monthlyData: PeriodPoint[] = useMemo(() => {
     return MONTHS.map((label, i) => ({
       label,
-      created: created[i] ?? 0,
+      created: monthlyCreated[i] ?? 0,
       pending: monthlyPending[i] ?? 0,
       year,
     }));
-  }, [monthlyLine, monthlyPending, year]);
+  }, [monthlyCreated, monthlyPending, year]);
 
-  // ===== Ranking por analista (para la lista diaria)
+  // =============== SERIES DIARIAS (30d/7d) ===============
+  const dailyArray = useMemo(() => findDailyArray(data), [data]);
+  const dailyMap = useMemo(() => buildDailyMap(dailyArray), [dailyArray]);
+
+  const daily30: PeriodPoint[] = useMemo(() => {
+    const rows = lastNDaysContinuous(30, dailyMap);
+    return rows.map(({ iso, created, pending }) => {
+      const dt = new Date(iso + "T00:00:00");
+      return {
+        label: dt.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }).replace(".", ""),
+        created, pending, year,
+      };
+    });
+  }, [dailyMap, year]);
+
+  const daily7: PeriodPoint[] = useMemo(() => {
+    const rows = lastNDaysContinuous(7, dailyMap);
+    return rows.map(({ iso, created, pending }) => {
+      const dt = new Date(iso + "T00:00:00");
+      return {
+        label: dt.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }).replace(".", ""),
+        created, pending, year,
+      };
+    });
+  }, [dailyMap, year]);
+
+  // =============== DATASET FINAL POR RANGO ===============
+  const chartDataView = useMemo<PeriodPoint[]>(() => {
+    switch (range) {
+      case "6m":  return monthlyData.slice(-6);
+      case "30d": return daily30;
+      case "7d":  return daily7;
+      default:    return monthlyData; // 12m
+    }
+  }, [range, monthlyData, daily30, daily7]);
+
+  // =============== Ranking anual (DailyPerformance) ===============
   const rankingBars = useMemo<BarItem[]>(() => {
     if (!data) return [];
     const map = new Map<string, { name: string; total: number }>();
@@ -126,7 +221,7 @@ export default function EstadisticasPage() {
       .map(r => ({ label: titleCase(r.name), value: r.total }));
   }, [data, year]);
 
-  // ===== Barras anuales (totales por año)
+  // =============== Barras anuales ===============
   const yearlyBars = useMemo<BarItem[]>(() => {
     if (!data) return [];
     return data.byYear
@@ -135,6 +230,45 @@ export default function EstadisticasPage() {
       .map(v => ({ label: String(v.year), value: v.total }));
   }, [data]);
 
+  /* ================= Exportar PDF ================= */
+  const chartRef = useRef<HTMLDivElement>(null);
+  const onExportPDF = async () => {
+    if (!chartRef.current) return;
+    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+      import("html2canvas"),
+      import("jspdf"),
+    ]);
+
+    const node = chartRef.current;
+    const canvas = await html2canvas(node, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+    });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const margin = 24;
+    const contentW = pageW - margin * 2;
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(14);
+    pdf.text("Cédulas por periodo", margin, 40);
+
+    const imgW = contentW;
+    const ratio = canvas.height / canvas.width;
+    const imgH = imgW * ratio;
+    pdf.addImage(imgData, "PNG", margin, 60, imgW, imgH, undefined, "FAST");
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9);
+    pdf.text(`Rango: ${range}  •  Año: ${year}`, margin, 60 + imgH + 18);
+
+    pdf.save(`cedulas-periodo-${range}-${year}.pdf`);
+  };
+
+  /* ================= Render ================= */
   return (
     <section className={styles.wrap}>
       <HeaderStats
@@ -156,24 +290,41 @@ export default function EstadisticasPage() {
           <KPIGrid items={kpis} />
 
           <section className={styles.grid2}>
-            <Card
-              title="Cédulas por periodo"
-              subtitle=""
-              right={
-                <div className="actions">
-                  <div className="pills" role="tablist" aria-label="Rango">
-                    <button className="pill" aria-pressed="true">12 Meses</button>
-                    <button className="pill" aria-pressed="false">6 Meses</button>
-                    <button className="pill" aria-pressed="false">30 Días</button>
-                    <button className="pill" aria-pressed="false">7 Días</button>
+            {/* Card del chart (referenciado para PDF) */}
+            <div ref={chartRef}>
+              <Card
+                title="Cédulas por periodo"
+                right={
+                  <div className={styles.actions}>
+                    <div className={styles.pills} role="tablist" aria-label="Rango">
+                      <button
+                        className={styles.pill}
+                        aria-pressed={range === "12m"}
+                        onClick={() => setRange("12m")}
+                      >12 Meses</button>
+                      <button
+                        className={styles.pill}
+                        aria-pressed={range === "6m"}
+                        onClick={() => setRange("6m")}
+                      >6 Meses</button>
+                      <button
+                        className={styles.pill}
+                        aria-pressed={range === "30d"}
+                        onClick={() => setRange("30d")}
+                      >30 Días</button>
+                      <button
+                        className={styles.pill}
+                        aria-pressed={range === "7d"}
+                        onClick={() => setRange("7d")}
+                      >7 Días</button>
+                    </div>
+                    <button className={styles.btn} onClick={onExportPDF}>🗎 Exportar PDF</button>
                   </div>
-                  <button className="btn">🗎 Exportar PDF</button>
-                </div>
-              }
-            >
-              {/* ✅ Recharts con banda dorada + rosada y tooltip como el mock */}
-              <LineChartRe data={chartData} height={260} />
-            </Card>
+                }
+              >
+                <LineChartRe data={chartDataView} height={260} />
+              </Card>
+            </div>
 
             <DailyPerformance
               items={rankingBars}

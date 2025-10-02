@@ -1,3 +1,4 @@
+// src/app/(tu-ruta)/asignaciones/page.tsx
 "use client";
 
 import styles from "./asignaciones.module.css";
@@ -13,7 +14,7 @@ import {
   listAnalystsBySubarea,
   assignTramite,
   searchTramites,
-  getTramiteEvidence, // 👈 NUEVO
+  getTramiteEvidence,
 } from "@/features/tramites/tramite.service";
 import type { TramiteFull, TramiteType, Analyst } from "@/features/tramites/tramite.model";
 
@@ -24,6 +25,8 @@ function toTitleCase(input?: string): string {
     w.charAt(0).toUpperCase() + w.slice(1)
   );
 }
+
+/** Mapea id → etiqueta estatus */
 function getStatusLabel(id: number): string {
   switch (id) {
     case 1: return "Recibido";
@@ -34,20 +37,58 @@ function getStatusLabel(id: number): string {
     default: return "—";
   }
 }
+
 const FINALIZADO_ID = 4 as const;
+
+/** Formatea bytes de documentos */
 function formatBytes(bytes?: number) {
   if (!bytes && bytes !== 0) return "";
-  const k = 1024, sizes = ["B","KB","MB","GB","TB"];
+  const k = 1024, sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  const val = (bytes / Math.pow(k, i));
+  const val = bytes / Math.pow(k, i);
   return `${val.toFixed(val < 10 ? 1 : 0)} ${sizes[i]}`;
 }
+
 function asNumberOrUndef(v: unknown): number | undefined {
   if (v == null) return undefined;
   const n = typeof v === "number" ? v : Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
-const COL_WIDTHS = [160,120,140,240,120,160,180,110,160,260,380] as const;
+
+/** ⏱️ Helpers SLA */
+function formatDateShort(iso?: string | null) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+function normalizeSla(label?: string | null): "en-tiempo" | "por-vencer" | "vencido" | "desconocido" {
+  const t = (label ?? "").trim().toLowerCase();
+  if (t.includes("vencid")) return "vencido";
+  if (t.includes("por vencer") || t.includes("por-vencer")) return "por-vencer";
+  if (t.includes("tiempo")) return "en-tiempo";
+  return "desconocido";
+}
+
+/** Column widths (agregamos Vence y Tiempo al final) */
+const COL_WIDTHS = [160,120,140,240,120,160,180,110,160,260,380,140,140] as const;
+
+/** Sin espacios en <tr>: generamos headers por map */
+const HEADERS = [
+  "Folio (sistema)",
+  "Tipo",
+  "Estatus",
+  "Asignado a",
+  "Asignó",
+  "Solicitante",
+  "Creado",
+  "En adeudo",
+  "Monto",
+  "No. de oficio",
+  "Evidencia",
+  "Vence",   // SLA dueDate
+  "Tiempo",  // SLA label + remainingDays
+] as const;
 
 export default function AsignacionesPage() {
   const { user } = useAuthContext();
@@ -70,10 +111,10 @@ export default function AsignacionesPage() {
   } = useTramites(defaultSub);
 
   // ===== Estado UI =====
-  const [adeudoMap, setAdeudoMap]       = useState<Record<string, boolean>>({});
-  const [montoMap, setMontoMap]         = useState<Record<string, string>>({});
-  const [noficioMap, setNoficioMap]     = useState<Record<string, string>>({});
-  const [fileNameMap, setFileNameMap]   = useState<Record<string, string>>({});
+  const [adeudoMap, setAdeudoMap]           = useState<Record<string, boolean>>({});
+  const [montoMap, setMontoMap]             = useState<Record<string, string>>({});
+  const [noficioMap, setNoficioMap]         = useState<Record<string, string>>({});
+  const [fileNameMap, setFileNameMap]       = useState<Record<string, string>>({});
   const [assigningFolio, setAssigningFolio] = useState<string | null>(null);
   const [rowSaving, setRowSaving]           = useState<string | null>(null);
 
@@ -81,8 +122,8 @@ export default function AsignacionesPage() {
   const [uploadOkMap, setUploadOkMap]   = useState<Record<string, boolean>>({});
   const [uploadErrMap, setUploadErrMap] = useState<Record<string, string>>({});
 
-  const [selected, setSelected] = useState<TramiteFull | null>(null);
-  const [openFolio, setOpenFolio] = useState<string | null>(null);
+  const [selected, setSelected]     = useState<TramiteFull | null>(null);
+  const [openFolio, setOpenFolio]   = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   const [tramiteTypes, setTramiteTypes] = useState<TramiteType[]>([]);
@@ -289,7 +330,7 @@ export default function AsignacionesPage() {
     }
   };
 
-  // ====== NUEVO: Ver / Descargar evidencia usando la nueva API ======
+  // ====== Ver / Descargar evidencia ======
   const viewEvidence = async (folio: string) => {
     try {
       const { blob } = await getTramiteEvidence(folio, true);
@@ -318,7 +359,7 @@ export default function AsignacionesPage() {
       alert("No se pudo descargar la evidencia.");
     }
   };
-  // ===================================================================
+  // ======================================
 
   const visibleRows = isAnalyst && user?.userId ? rows.filter(r => r.assignedTo === user.userId) : rows;
 
@@ -337,30 +378,18 @@ export default function AsignacionesPage() {
             </colgroup>
 
             <thead>
-              <tr>
-                <th>Folio (sistema)</th>
-                <th>Tipo</th>
-                <th>Estatus</th>
-                <th>Asignado a</th>
-                <th>Asignó</th>
-                <th>Solicitante</th>
-                <th>Creado</th>
-                <th>En adeudo</th>
-                <th>Monto</th>
-                <th>No. de oficio</th>
-                <th>Evidencia</th>
-              </tr>
+              <tr>{HEADERS.map((h, i) => <th key={i}>{h}</th>)}</tr>
             </thead>
 
             <tbody>
               {loading ? (
-                <tr><td colSpan={11}>Cargando…</td></tr>
+                <tr><td colSpan={COL_WIDTHS.length}>Cargando…</td></tr>
               ) : visibleRows.length ? (
                 visibleRows.map((t) => {
                   const variant  = String(t.statusDesc || "").toLowerCase();
                   const typeAttr = String(t.tramiteTypeDesc || "").toLowerCase().replace(/\s+/g, "-");
 
-                  const enAdeudo = adeudoMap[t.folio] ?? (t as any).enadeudo ?? false;
+                  const enAdeudo = (t as any).enadeudo ?? adeudoMap[t.folio] ?? false;
                   const montoVal = montoMap[t.folio] ?? ((t as any).adeudo != null ? String((t as any).adeudo) : "");
                   const picked   = fileNameMap[t.folio];
                   const inputId  = `file-${t.folio}`;
@@ -503,7 +532,6 @@ export default function AsignacionesPage() {
                               ? <span className={styles.fileName}>{toTitleCase(picked)}</span>
                               : <span className={styles.muted}>Sin evidencia</span>}
 
-                            {/* NUEVO: acciones Ver / Descargar cuando hay evidencia */}
                             {picked && !isUploading && (
                               <>
                                 <button
@@ -532,11 +560,28 @@ export default function AsignacionesPage() {
                             )}
                           </div>
                         </td>
+
+                        {/* Vence */}
+                        <td>{formatDateShort((t as any).dueDate)}</td>
+
+                        {/* Tiempo (SLA) */}
+                        <td>
+                          {(() => {
+                            const label = (t as any).slaLabel ?? "—";
+                            const days = (t as any).remainingDays;
+                            const v = normalizeSla(label);
+                            return (
+                              <span className={styles.badge} data-variant={v} title={`Días restantes: ${days ?? "—"}`}>
+                                {label}{Number.isFinite(days) ? ` (${days} d)` : ""}
+                              </span>
+                            );
+                          })()}
+                        </td>
                       </tr>
 
                       {openFolio === t.folio && selected && (
                         <tr className={styles.detailRow}>
-                          <td colSpan={11}>
+                          <td colSpan={COL_WIDTHS.length}>
                             {loadingDetail ? (
                               <div className={styles.detailBox}>Cargando detalle…</div>
                             ) : (
@@ -601,7 +646,7 @@ export default function AsignacionesPage() {
                   );
                 })
               ) : (
-                <tr><td colSpan={11}>Sin resultados</td></tr>
+                <tr><td colSpan={COL_WIDTHS.length}>Sin resultados</td></tr>
               )}
             </tbody>
           </table>

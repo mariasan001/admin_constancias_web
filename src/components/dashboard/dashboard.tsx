@@ -24,6 +24,7 @@ const ITEMS: Item[] = [
   { id:'altas-entregas', label:'Altas y entregas', href:'/dashboard/altas-entregas', icon:FileCheck2, roles:['VENTANILLA'] },
   { id:'altas',          label:'Altas',        href:'/dashboard/altas',      icon:FilePlus2, roles:['USER'] },
   { id:'seguimiento',    label:'Seguimiento',  href:'/dashboard/seguimiento', icon:ListChecks, roles:['USER'] },
+  { id:'configuracion', label:'configuracion', href:'/dashboard/configuracion', icon:ListChecks, roles:['ADMIN'] },
 ];
 
 export default function Sidebar(){

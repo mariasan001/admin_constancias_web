@@ -1,6 +1,7 @@
 // src/features/tramites/tramite.model.ts
 
 // ===== Listado =====
+// ===== Listado =====
 export type Tramite = {
   id: number;
   folio: string;
@@ -30,7 +31,13 @@ export type Tramite = {
   noficio?: string | null;       // ej. "OF/DTI/123/2025"
   evidencia?: string | null;     // ej. "evidencias/xxx.jpg"
   enadeudo?: boolean | null;     // true/false/null
+
+  // ⏱️ NUEVOS DE TIEMPO (SLA)
+  remainingDays?: number | null; // días restantes para vencer (puede ser negativo)
+  dueDate?: string | null;       // ISO date, ej. "2025-12-11"
+  slaLabel?: string | null;      // ej. "EN TIEMPO" | "POR VENCER" | "VENCIDO"
 };
+
 
 // Página de resultados
 export type TramitePage = {

@@ -97,3 +97,13 @@
 @media (max-width:600px){
   .kpiCard{ grid-column: span 12; }
 }
+/* en Card.module.css o en el CSS del page */
+.actions { display:flex; gap:10px; align-items:center; }
+.pills  { display:inline-flex; background:#f2efe9; padding:4px; border-radius:999px; border:1px solid var(--border); }
+.pill   { appearance:none; border:0; background:transparent; cursor:pointer;
+  padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#6f6a65; }
+.pill[aria-pressed="true"] { background:#fff; color:var(--text); box-shadow:var(--shadow-1); }
+.btn { appearance:none; border:1px solid var(--border); background:var(--card);
+  border-radius:12px; padding:8px 12px; font-weight:700; font-size:12px;
+  display:inline-flex; gap:8px; align-items:center; cursor:pointer; color:var(--text);
+  box-shadow:var(--shadow-1); }
