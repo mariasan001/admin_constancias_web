@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import styles from "./estadisticas.module.css";
 
 import { getTramitesSummary } from "@/features/reports/reports.service";
 import { MONTHS, TramitesSummary, titleCase } from "@/features/reports/reports.model";
 
-import type { BarItem, LinePoint } from "./components/estadisticas/types";
+import type { BarItem } from "./components/estadisticas/types";
 import HeaderStats from "./components/HeaderStats/HeaderStats";
 import KPIGrid from "./components/KpiGrid/KpiGrid";
 import Card from "./components/Card/Card";
@@ -14,68 +15,55 @@ import BarsColumns from "./components/BarsColumns/BarsColumns";
 import LineChartRe, { PeriodPoint } from "./components/LineChart/LineChart";
 import DailyPerformance from "./components/BarsColumns/BarsColumns";
 
-/* ====================================================================
-   Helpers SERIE DIARIA robustos (30d / 7d)
-   ==================================================================== */
-type AnyDaily = Array<{ date: string; status?: string | null; total: number }>;
+/* ================================================================
+   Helpers diarios basados en countByDays (con TZ México)
+   ================================================================ */
+type DailyMapRec = { created: number; pending: number };
 
-function findDailyArray(d: any): AnyDaily | null {
-  // Intenta varios nombres típicos:
-  const candidates = [
-    d?.byDayStatus,
-    d?.byDateStatus,
-    d?.daily,
-    d?.byDay,
-    d?.byDate,
-  ];
-  const arr = candidates.find((x) => Array.isArray(x) && x.length > 0);
-  if (!arr) return null;
-
-  // Normaliza shape: {date, status?, total}
-  return (arr as any[]).map((r) => ({
-    date: r.date ?? r.day ?? r.fecha ?? r.Date ?? r?.dt,
-    status: (r.status ?? r.estado ?? r.State ?? "").toString(),
-    total: Number(r.total ?? r.value ?? r.Total ?? 0),
-  })) as AnyDaily;
-}
-
-/** Construye un Map YYYY-MM-DD -> {created, pending} */
-function buildDailyMap(d: AnyDaily | null) {
-  const map = new Map<string, { created: number; pending: number }>();
-  if (!d) return map;
+function buildDailyMapFromCount(d?: TramitesSummary["countByDays"]) {
+  const map = new Map<string, DailyMapRec>();
+  if (!d?.length) return map;
 
   for (const row of d) {
-    const iso = (row.date || "").slice(0, 10);
+    const iso = (row.day || "").slice(0, 10);
     if (!iso) continue;
-
-    const rec = map.get(iso) ?? { created: 0, pending: 0 };
-    rec.created += row.total;
-    if ((row.status ?? "").toUpperCase() !== "FINALIZADO") rec.pending += row.total;
-    map.set(iso, rec);
+    const prev = map.get(iso) ?? { created: 0, pending: 0 };
+    prev.created += row.total;
+    if ((row.status || "").toUpperCase() !== "FINALIZADO") prev.pending += row.total;
+    map.set(iso, prev);
   }
   return map;
 }
 
-/** Últimos N días continuos hasta HOY, rellenando con 0 si no existe el día */
-function lastNDaysContinuous(
-  n: number,
-  dailyMap: Map<string, { created: number; pending: number }>
-) {
+function toISODateMx(d: Date) {
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .formatToParts(d)
+    .reduce((o, p) => ((o as any)[p.type] = p.value, o), {} as Record<string, string>);
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+/** Últimos N días continuos hasta HOY (TZ MX), rellenando con 0 */
+function lastNDaysContinuous(n: number, dailyMap: Map<string, DailyMapRec>) {
   const out: { iso: string; created: number; pending: number }[] = [];
   const today = new Date();
   for (let i = n - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = toISODateMx(d);
     const rec = dailyMap.get(iso) ?? { created: 0, pending: 0 };
     out.push({ iso, created: rec.created, pending: rec.pending });
   }
   return out;
 }
 
-/* ====================================================================
+/* ================================================================
    Data hook
-   ==================================================================== */
+   ================================================================ */
 function useSummary(year?: number) {
   const [data, setData] = useState<TramitesSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,28 +88,74 @@ function useSummary(year?: number) {
   return { data, loading, err };
 }
 
-/* ====================================================================
+/* ================================================================
+   Debounce util
+   ================================================================ */
+function useDebounced<T>(val: T, ms = 120) {
+  const [v, setV] = useState(val);
+  useEffect(() => {
+    const t = setTimeout(() => setV(val), ms);
+    return () => clearTimeout(t);
+  }, [val, ms]);
+  return v;
+}
+
+/* ================================================================
    Page
-   ==================================================================== */
+   ================================================================ */
 type Range = "12m" | "6m" | "30d" | "7d";
 
 export default function EstadisticasPage() {
   const yearNow = new Date().getFullYear();
-  const [year, setYear] = useState<number>(yearNow);
-  const [range, setRange] = useState<Range>("12m");
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
+
+  // Estado inicial sincronizado con URL
+  const [year, setYear] = useState<number>(() => {
+    const y = Number(sp.get("year"));
+    return Number.isFinite(y) ? y : yearNow;
+  });
+  const [range, setRange] = useState<Range>(() => {
+    const r = sp.get("range") as Range | null;
+    return r && ["12m", "6m", "30d", "7d"].includes(r) ? r : "12m";
+  });
+
+  // Reflejar cambios a la URL (shareable)
+  useEffect(() => {
+    const params = new URLSearchParams(sp);
+    params.set("year", String(year));
+    params.set("range", range);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, range]);
+
   const { data, loading, err } = useSummary(year);
+
+  const nf = useMemo(() => new Intl.NumberFormat("es-MX"), []);
+  const rangeDeb = useDebounced(range, 120);
 
   // ================= KPIs =================
   const kpis = useMemo(() => {
     if (!data) return [];
+
+    const now = new Date();
+    const thisMonth = now.getMonth() + 1; // 1..12
+    const thisYear = now.getFullYear();
+    const prevMonth = thisMonth === 1 ? 12 : thisMonth - 1;
+    const prevYear = thisMonth === 1 ? thisYear - 1 : thisYear;
+
     const totalYear = data.byYear.find(x => x.year === year)?.total ?? 0;
 
     const totalMonth = data.byMonthStatus
-      .filter(m => m.year === year && m.month === (new Date().getMonth() + 1))
+      .filter(m => m.year === year && m.month === thisMonth)
       .reduce((acc, x) => acc + x.total, 0);
 
     const prevMonthTotal = data.byMonthStatus
-      .filter(m => m.year === year && m.month === new Date().getMonth())
+      .filter(m =>
+        m.year === (year === thisYear ? prevYear : year) &&
+        m.month === prevMonth
+      )
       .reduce((acc, x) => acc + x.total, 0);
 
     const delta = prevMonthTotal > 0
@@ -129,16 +163,18 @@ export default function EstadisticasPage() {
       : undefined;
 
     const pending = data.byMonthStatus
-      .filter(m => m.year === year && m.month === (new Date().getMonth() + 1) && m.status?.toUpperCase() !== "FINALIZADO")
+      .filter(m => m.year === year && m.month === thisMonth && m.status?.toUpperCase() !== "FINALIZADO")
       .reduce((acc, x) => acc + x.total, 0);
 
+    const monthLabel = year === thisYear ? MONTHS[thisMonth - 1] : "N/A";
+
     return [
-      { label: `Cédulas elaboradas en ${year}`, value: totalYear, delta: undefined },
-      { label: `Cédulas del mes (${MONTHS[new Date().getMonth()]})`, value: totalMonth, delta },
-      { label: "Total cédulas del día", value: data.todayTotal, delta: undefined },
-      { label: "Total cédulas pendientes", value: pending, delta: undefined },
+      { label: `Cédulas elaboradas en ${year}`, value: nf.format(totalYear), delta: undefined },
+      { label: `Cédulas del mes (${monthLabel})`, value: nf.format(totalMonth), delta },
+      { label: "Total cédulas del día", value: nf.format(data.todayTotal ?? 0), delta: undefined },
+      { label: "Total cédulas pendientes", value: nf.format(pending), delta: undefined },
     ];
-  }, [data, year]);
+  }, [data, year, nf]);
 
   // =============== SERIES MENSUALES ===============
   const monthlyCreated = useMemo<number[]>(() => {
@@ -169,8 +205,10 @@ export default function EstadisticasPage() {
   }, [monthlyCreated, monthlyPending, year]);
 
   // =============== SERIES DIARIAS (30d/7d) ===============
-  const dailyArray = useMemo(() => findDailyArray(data), [data]);
-  const dailyMap = useMemo(() => buildDailyMap(dailyArray), [dailyArray]);
+  const dailyMap = useMemo(
+    () => buildDailyMapFromCount(data?.countByDays),
+    [data?.countByDays]
+  );
 
   const daily30: PeriodPoint[] = useMemo(() => {
     const rows = lastNDaysContinuous(30, dailyMap);
@@ -194,17 +232,17 @@ export default function EstadisticasPage() {
     });
   }, [dailyMap, year]);
 
-  // =============== DATASET FINAL POR RANGO ===============
+  // =============== DATASET FINAL POR RANGO (debounced) ===============
   const chartDataView = useMemo<PeriodPoint[]>(() => {
-    switch (range) {
+    switch (rangeDeb) {
       case "6m":  return monthlyData.slice(-6);
       case "30d": return daily30;
       case "7d":  return daily7;
       default:    return monthlyData; // 12m
     }
-  }, [range, monthlyData, daily30, daily7]);
+  }, [rangeDeb, monthlyData, daily30, daily7]);
 
-  // =============== Ranking anual (DailyPerformance) ===============
+  // =============== Ranking anual ===============
   const rankingBars = useMemo<BarItem[]>(() => {
     if (!data) return [];
     const map = new Map<string, { name: string; total: number }>();
@@ -232,43 +270,51 @@ export default function EstadisticasPage() {
 
   /* ================= Exportar PDF ================= */
   const chartRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
   const onExportPDF = async () => {
-    if (!chartRef.current) return;
-    const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-      import("html2canvas"),
-      import("jspdf"),
-    ]);
+    if (!chartRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
 
-    const node = chartRef.current;
-    const canvas = await html2canvas(node, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-    });
-    const imgData = canvas.toDataURL("image/png");
+      const node = chartRef.current;
+      const canvas = await html2canvas(node, { scale: 2, backgroundColor: "#ffffff", useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF({ unit: "pt", format: "a4" });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const margin = 24;
-    const contentW = pageW - margin * 2;
+      const pdf = new jsPDF({ unit: "pt", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const margin = 24;
+      const contentW = pageW - margin * 2;
 
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(14);
-    pdf.text("Cédulas por periodo", margin, 40);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.text("Cédulas por periodo", margin, 40);
 
-    const imgW = contentW;
-    const ratio = canvas.height / canvas.width;
-    const imgH = imgW * ratio;
-    pdf.addImage(imgData, "PNG", margin, 60, imgW, imgH, undefined, "FAST");
+      const imgW = contentW;
+      const ratio = canvas.height / canvas.width;
+      const imgH = imgW * ratio;
+      pdf.addImage(imgData, "PNG", margin, 60, imgW, imgH, undefined, "FAST");
 
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.text(`Rango: ${range}  •  Año: ${year}`, margin, 60 + imgH + 18);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.text(`Rango: ${range}  •  Año: ${year}`, margin, 60 + imgH + 18);
 
-    pdf.save(`cedulas-periodo-${range}-${year}.pdf`);
+      pdf.save(`cedulas-periodo-${range}-${year}.pdf`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   /* ================= Render ================= */
+  const isAllZero = useMemo(
+    () => chartDataView.every(p => (p.created || 0) === 0 && (p.pending || 0) === 0),
+    [chartDataView]
+  );
+
   return (
     <section className={styles.wrap}>
       <HeaderStats
@@ -297,32 +343,22 @@ export default function EstadisticasPage() {
                 right={
                   <div className={styles.actions}>
                     <div className={styles.pills} role="tablist" aria-label="Rango">
-                      <button
-                        className={styles.pill}
-                        aria-pressed={range === "12m"}
-                        onClick={() => setRange("12m")}
-                      >12 Meses</button>
-                      <button
-                        className={styles.pill}
-                        aria-pressed={range === "6m"}
-                        onClick={() => setRange("6m")}
-                      >6 Meses</button>
-                      <button
-                        className={styles.pill}
-                        aria-pressed={range === "30d"}
-                        onClick={() => setRange("30d")}
-                      >30 Días</button>
-                      <button
-                        className={styles.pill}
-                        aria-pressed={range === "7d"}
-                        onClick={() => setRange("7d")}
-                      >7 Días</button>
+                      <button className={styles.pill} aria-pressed={range === "12m"} onClick={() => setRange("12m")}>12 Meses</button>
+                      <button className={styles.pill} aria-pressed={range === "6m"}  onClick={() => setRange("6m")}>6 Meses</button>
+                      <button className={styles.pill} aria-pressed={range === "30d"} onClick={() => setRange("30d")}>30 Días</button>
+                      <button className={styles.pill} aria-pressed={range === "7d"}  onClick={() => setRange("7d")}>7 Días</button>
                     </div>
-                    <button className={styles.btn} onClick={onExportPDF}>🗎 Exportar PDF</button>
+                    <button className={styles.btn} onClick={onExportPDF} disabled={exporting}>
+                      {exporting ? "Exportando…" : "🗎 Exportar PDF"}
+                    </button>
                   </div>
                 }
               >
-                <LineChartRe data={chartDataView} height={260} />
+                {isAllZero ? (
+                  <div className={styles.emptySeries}>Sin datos en el rango seleccionado</div>
+                ) : (
+                  <LineChartRe data={chartDataView} height={260} />
+                )}
               </Card>
             </div>
 
